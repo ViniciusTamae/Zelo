@@ -91,14 +91,14 @@ isOneToOne: false
                   ]
                 },"inquilinos": {
                   Row: {
-                    "ativo": boolean,"atualizado_em": string,"criado_em": string,"email": string | null,"id": string,"imovel_id": string,"nome": string,"token_hash": string,"ultimo_acesso_em": string | null
+                    "ativo": boolean,"atualizado_em": string,"criado_em": string,"email": string | null,"id": string,"imovel_id": string,"link_reenviado_em": string | null,"nome": string,"token_hash": string,"ultimo_acesso_em": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "ativo"?: boolean,"atualizado_em"?: string,"criado_em"?: string,"email"?: string | null,"id"?: string,"imovel_id": string,"nome": string,"token_hash": string,"ultimo_acesso_em"?: string | null
+                    "ativo"?: boolean,"atualizado_em"?: string,"criado_em"?: string,"email"?: string | null,"id"?: string,"imovel_id": string,"link_reenviado_em"?: string | null,"nome": string,"token_hash": string,"ultimo_acesso_em"?: string | null
                   }
                   Update: {
-                    "ativo"?: boolean,"atualizado_em"?: string,"criado_em"?: string,"email"?: string | null,"id"?: string,"imovel_id"?: string,"nome"?: string,"token_hash"?: string,"ultimo_acesso_em"?: string | null
+                    "ativo"?: boolean,"atualizado_em"?: string,"criado_em"?: string,"email"?: string | null,"id"?: string,"imovel_id"?: string,"link_reenviado_em"?: string | null,"nome"?: string,"token_hash"?: string,"ultimo_acesso_em"?: string | null
                   }
                   Relationships: [
                     {

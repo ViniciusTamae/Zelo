@@ -50,6 +50,14 @@ export async function aguardarLinkDoCodigo(email: string, jaRecebidos = 0) {
   return href.replaceAll("&amp;", "&");
 }
 
+// Link /c/[token] do e-mail "Perdi meu link" mais recente.
+export async function aguardarLinkDoInquilino(email: string, jaRecebidos = 0) {
+  const { Text } = await aguardarMensagem(email, jaRecebidos);
+  const link = Text.match(/https?:\/\/\S+\/c\/[A-Za-z0-9_-]+/)?.[0];
+  if (!link) throw new Error(`E-mail sem link do inquilino: ${Text}`);
+  return link;
+}
+
 // Esvazia a caixa do Mailpit.
 export async function apagarTodosEmails() {
   await fetch(`${MAILPIT_URL}/api/v1/messages`, { method: "DELETE" });

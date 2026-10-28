@@ -12,6 +12,19 @@ const nextConfig: NextConfig = {
       { source: "/painel/imoveis/:caminho*", destination: "/imoveis/:caminho*", permanent: false },
     ];
   },
+  // Página do inquilino: o token está na URL. Sem Referer, ele não vaza para
+  // sites externos; e o link pessoal não deve ser indexado.
+  async headers() {
+    return [
+      {
+        source: "/c/:token*",
+        headers: [
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
+      },
+    ];
+  },
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

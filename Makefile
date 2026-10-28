@@ -4,7 +4,7 @@ export PWD := $(CURDIR)
 
 RUN := docker compose run --rm dev
 
-.PHONY: build sh install dev lint test test-db test-e2e test-all mail-clear db-start db-stop db-status db-reset db-types db-new prod
+.PHONY: build sh install dev lint test test-db test-e2e test-all mail-clear db-start db-stop db-status db-reset db-migrate db-types db-new prod
 
 build:      ## Constrói a imagem de desenvolvimento
 	docker compose build dev
@@ -41,8 +41,11 @@ db-stop:
 db-status:  ## Mostra URLs e chaves do Supabase local
 	$(RUN) pnpm supabase status
 
-db-reset:   ## Recria o banco local aplicando todas as migrações
+db-reset:   ## Recria o banco local do zero (APAGA os dados locais)
 	$(RUN) pnpm db:reset
+
+db-migrate: ## Aplica só as migrações novas, sem apagar os dados locais
+	$(RUN) pnpm supabase migration up --local
 
 db-types:   ## Gera src/lib/supabase/database.types.ts
 	$(RUN) pnpm db:types

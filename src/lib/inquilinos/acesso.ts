@@ -23,3 +23,13 @@ export async function buscarInquilinoPeloLink(token: string) {
   const { imoveis, ...inquilino } = data;
   return { ...inquilino, apelidoImovel: imoveis.apelido };
 }
+
+// Guarda quando o inquilino abriu o link (o dono vê "Visto em ...").
+export async function registrarAcesso(inquilinoId: string) {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("inquilinos")
+    .update({ ultimo_acesso_em: new Date().toISOString() })
+    .eq("id", inquilinoId);
+  if (error) throw error;
+}

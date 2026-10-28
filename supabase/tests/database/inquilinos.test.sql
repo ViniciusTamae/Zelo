@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(14);
+select plan(16);
 
 insert into auth.users (id, email, aud, role) values
   ('11111111-1111-1111-1111-111111111111', 'ana@teste.test', 'authenticated', 'authenticated'),
@@ -59,6 +59,22 @@ select is(
 );
 
 select hasnt_function('public', 'gerar_novo_token_inquilino', 'a função antiga de gerar token foi removida');
+
+select throws_ok(
+  format(
+    $$insert into public.inquilinos (imovel_id, nome, email, token_hash) values ('aaaaaaaa-0000-0000-0000-000000000001', 'Maiúsculo', 'Maria@Exemplo.com', %L)$$,
+    encode(extensions.digest('token-maiusculo', 'sha256'), 'hex')
+  ),
+  '23514',
+  null,
+  'e-mail do inquilino fica sempre em minúsculas (o "Perdi meu link" busca assim)'
+);
+
+select is(
+  (select link_reenviado_em from public.inquilinos where id = 'cccccccc-0000-0000-0000-000000000001'),
+  null,
+  'inquilino novo ainda não pediu reenvio do link'
+);
 
 -- ---------------------------------------------------------------------------
 -- Logada como Ana: só enxerga e altera os próprios inquilinos

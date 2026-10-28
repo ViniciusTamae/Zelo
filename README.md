@@ -32,11 +32,16 @@ As migrações ficam em `supabase/migrations` e são a única forma de mudar o e
 
 ```bash
 make db-new nome=descricao   # cria uma migração nova
-make db-reset                # recria o banco local aplicando todas as migrações
+make db-migrate              # aplica só as migrações novas (mantém os dados)
+make db-reset                # recria o banco local do zero (APAGA os dados locais)
 make db-types                # regenera src/lib/supabase/database.types.ts
 ```
 
-## E-mails do login
+## E-mails
+
+Os e-mails que o próprio app manda (ex.: "Perdi meu link" do inquilino) usam a API do Resend quando `RESEND_API_KEY` está definida; sem ela, vão para o Mailpit local (`MAILPIT_URL`). O remetente vem de `RESEND_FROM`.
+
+### E-mails do login
 
 No local, o Supabase Auth entrega os e-mails no Mailpit (http://localhost:54324). O modelo do e-mail com o código fica em `supabase/templates/codigo-acesso.html`.
 
