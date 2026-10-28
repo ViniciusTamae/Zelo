@@ -50,7 +50,7 @@ export function FormInquilino({ imovelId }: { imovelId: string }) {
         </p>
       )}
       {estado.sucesso && (
-        <p role="status" className="text-sm text-green-700 dark:text-green-400">
+        <p role="status" className="text-sm text-status-resolvido-foreground">
           {estado.sucesso}
         </p>
       )}

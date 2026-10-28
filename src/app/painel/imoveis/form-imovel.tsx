@@ -55,7 +55,7 @@ export function FormImovel({ imovel }: Props) {
       />
 
       <fieldset className="flex flex-col gap-4">
-        <legend className="mb-3 text-sm font-medium">Endereço</legend>
+        <legend className="mb-3 text-sm font-semibold">Endereço</legend>
 
         <CampoTexto
           {...propsDoCampo("logradouro")}

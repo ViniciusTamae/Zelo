@@ -35,7 +35,7 @@ export function BotaoCompartilhar({ link, mensagem }: Props) {
   }
 
   return (
-    <Button type="button" onClick={compartilhar} className="h-10">
+    <Button type="button" variant="outline" onClick={compartilhar} className="h-10">
       {copiado ? "Link copiado!" : "Compartilhar link"}
     </Button>
   );
