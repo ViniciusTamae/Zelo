@@ -25,6 +25,13 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  experimental: {
+    serverActions: {
+      // A foto do chamado vai junto do formulário (já reduzida no celular,
+      // até 3 MB). Fica abaixo do limite de 4,5 MB por requisição da Vercel.
+      bodySizeLimit: "4mb",
+    },
+  },
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {
