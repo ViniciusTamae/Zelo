@@ -71,14 +71,14 @@ isOneToOne: false
                   ]
                 },"imoveis": {
                   Row: {
-                    "apelido": string,"atualizado_em": string,"criado_em": string,"dono_id": string,"endereco": string,"id": string
+                    "apelido": string,"atualizado_em": string,"bairro": string,"complemento": string | null,"criado_em": string,"dono_id": string,"id": string,"logradouro": string,"numero": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "apelido": string,"atualizado_em"?: string,"criado_em"?: string,"dono_id": string,"endereco": string,"id"?: string
+                    "apelido": string,"atualizado_em"?: string,"bairro": string,"complemento"?: string | null,"criado_em"?: string,"dono_id": string,"id"?: string,"logradouro": string,"numero": string
                   }
                   Update: {
-                    "apelido"?: string,"atualizado_em"?: string,"criado_em"?: string,"dono_id"?: string,"endereco"?: string,"id"?: string
+                    "apelido"?: string,"atualizado_em"?: string,"bairro"?: string,"complemento"?: string | null,"criado_em"?: string,"dono_id"?: string,"id"?: string,"logradouro"?: string,"numero"?: string
                   }
                   Relationships: [
                     {
@@ -181,7 +181,9 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            [_ in never]: never
+            "gerar_novo_token_inquilino":
+{ Args: { "inquilino": string }; Returns: string
+                           }
           }
           Enums: {
             "autor_evento": "proprietario"|"inquilino"|"sistema","categoria_chamado": "hidraulica"|"eletrica"|"telhado"|"outros","destino_notificacao": "proprietario"|"inquilino","status_chamado": "aberto"|"em_andamento"|"resolvido"

@@ -1,18 +1,7 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
+import { digitarCodigo, pedirCodigo } from "./ajudantes";
 import { aguardarCodigo, contarEmails, emailDeTeste } from "./mailpit";
-
-async function pedirCodigo(page: Page, email: string) {
-  await page.goto("/entrar");
-  await page.getByLabel("E-mail").fill(email);
-  await page.getByRole("button", { name: "Receber código por e-mail" }).click();
-  await expect(page.getByText(`Enviamos um código de 6 números para`)).toBeVisible();
-}
-
-async function digitarCodigo(page: Page, codigo: string) {
-  await page.getByLabel("Código").fill(codigo);
-  await page.getByRole("button", { name: "Entrar", exact: true }).click();
-}
 
 test("sem login, o painel manda para a tela de entrar", async ({ page }) => {
   await page.goto("/painel");
@@ -41,10 +30,10 @@ test("login completo: código errado, código certo, sessão e sair", async ({ p
     "Código inválido ou expirado. Confira o número ou peça um novo.",
   );
 
-  // Código certo abre o painel com o e-mail do proprietário
+  // Código certo abre o painel
   await digitarCodigo(page, codigo);
   await expect(page).toHaveURL(/\/painel$/);
-  await expect(page.getByText(email)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Seus imóveis" })).toBeVisible();
 
   // Já logado, /entrar volta para o painel
   await page.goto("/entrar");

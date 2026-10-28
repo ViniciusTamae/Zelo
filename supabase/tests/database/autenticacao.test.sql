@@ -42,9 +42,9 @@ select is(
 );
 
 -- Dados de cada proprietário (inseridos como admin, antes de trocar de papel)
-insert into public.imoveis (id, dono_id, apelido, endereco) values
-  ('aaaaaaaa-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Casa da Ana', 'Rua A, 1'),
-  ('bbbbbbbb-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', 'Casa do Beto', 'Rua B, 2');
+insert into public.imoveis (id, dono_id, apelido, logradouro, numero, bairro) values
+  ('aaaaaaaa-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Casa da Ana', 'Rua A', '1', 'Centro'),
+  ('bbbbbbbb-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', 'Casa do Beto', 'Rua B', '2', 'Centro');
 
 -- ---------------------------------------------------------------------------
 -- Logado como Beto
@@ -78,8 +78,8 @@ select is_empty(
 );
 
 select throws_ok(
-  $$insert into public.imoveis (dono_id, apelido, endereco)
-    values ('11111111-1111-1111-1111-111111111111', 'x', 'y')$$,
+  $$insert into public.imoveis (dono_id, apelido, logradouro, numero, bairro)
+    values ('11111111-1111-1111-1111-111111111111', 'x', 'y', '1', 'z')$$,
   '42501',
   null,
   'não consegue criar imóvel em nome de outro proprietário'

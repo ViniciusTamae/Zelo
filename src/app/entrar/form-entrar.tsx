@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useId } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,14 +13,16 @@ const estadoInicial: EstadoEntrar = { etapa: "email" };
 // Só exibe o estado devolvido pela Server Action; as regras ficam em actions.ts.
 export function FormEntrar() {
   const [estado, acao, pendente] = useActionState(entrar, estadoInicial);
+  // Ids únicos: o Next mantém a tela anterior montada (escondida) na navegação.
+  const id = useId();
 
   if (estado.etapa === "email") {
     return (
       <form action={acao} className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="email">E-mail</Label>
+          <Label htmlFor={`${id}-email`}>E-mail</Label>
           <Input
-            id="email"
+            id={`${id}-email`}
             name="email"
             type="email"
             inputMode="email"
@@ -63,9 +65,9 @@ export function FormEntrar() {
       </p>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="codigo">Código</Label>
+        <Label htmlFor={`${id}-codigo`}>Código</Label>
         <Input
-          id="codigo"
+          id={`${id}-codigo`}
           name="codigo"
           inputMode="numeric"
           autoComplete="one-time-code"

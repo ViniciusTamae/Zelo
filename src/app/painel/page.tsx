@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 
-import { Button } from "@/components/ui/button";
-import { obterProprietario } from "@/lib/auth";
-
-import { sair } from "./actions";
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { listarImoveis } from "@/lib/imoveis/dados";
 
 export const metadata: Metadata = {
   title: "Painel | Zelo",
@@ -12,40 +12,52 @@ export const metadata: Metadata = {
 
 export default function PainelPage() {
   return (
-    <div className="flex flex-1 flex-col">
-      <header className="flex items-center justify-between border-b px-4 py-3">
-        <span className="text-lg font-semibold">Zelo</span>
-        <form action={sair}>
-          <Button type="submit" variant="ghost">
-            Sair
-          </Button>
-        </form>
-      </header>
+    <>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold">Seus imóveis</h1>
+        <Link href="/painel/imoveis/novo" className={buttonVariants({ size: "lg" })}>
+          Novo imóvel
+        </Link>
+      </div>
 
-      <main className="flex flex-1 flex-col gap-4 px-4 py-6">
-        {/* A sessão é lida na requisição: fica atrás do Suspense. */}
-        <Suspense
-          fallback={<p className="text-muted-foreground">Carregando...</p>}
-        >
-          <Saudacao />
-        </Suspense>
-        <p className="text-muted-foreground">
-          Seus imóveis e chamados vão aparecer aqui.
-        </p>
-      </main>
-    </div>
+      {/* Os dados são lidos na requisição: ficam atrás do Suspense. */}
+      <Suspense fallback={<p className="text-muted-foreground">Carregando...</p>}>
+        <ListaImoveis />
+      </Suspense>
+    </>
   );
 }
 
-async function Saudacao() {
-  const proprietario = await obterProprietario();
+async function ListaImoveis() {
+  const imoveis = await listarImoveis();
+
+  if (imoveis.length === 0) {
+    return (
+      <p className="text-muted-foreground">
+        Você ainda não cadastrou imóveis. Comece pelo botão &quot;Novo imóvel&quot;.
+      </p>
+    );
+  }
 
   return (
-    <h1 className="text-xl font-semibold">
-      Olá{proprietario.nome ? `, ${proprietario.nome}` : ""}!
-      <span className="block text-sm font-normal text-muted-foreground">
-        {proprietario.email}
-      </span>
-    </h1>
+    <ul className="flex flex-col gap-3">
+      {imoveis.map((imovel) => (
+        <li key={imovel.id}>
+          <Link href={`/painel/imoveis/${imovel.id}`} className="block">
+            <Card className="transition-colors hover:bg-muted/50">
+              <CardHeader>
+                <CardTitle>{imovel.apelido}</CardTitle>
+                <CardDescription>{imovel.endereco}</CardDescription>
+                <CardDescription>
+                  {imovel.inquilinosAtivos === 1
+                    ? "1 inquilino"
+                    : `${imovel.inquilinosAtivos} inquilinos`}
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }
