@@ -1,0 +1,47 @@
+# Desenvolvimento local 100% em Docker.
+# Use pelo Makefile (make dev, make db-start, ...), que roda a partir da raiz do projeto.
+#
+# O Supabase local (Postgres, Auth, Storage...) NÃO está aqui: ele é criado pelo
+# `supabase start`, executado de dentro do serviço dev, como containers irmãos.
+
+services:
+  # Dia a dia: Next.js com hot reload, pnpm e Supabase CLI.
+  dev:
+    build:
+      context: .
+      dockerfile: docker/dev.Dockerfile
+    image: zelo-dev
+    # O projeto fica montado no MESMO caminho do PC: o Supabase CLI cria
+    # containers irmãos que montam pastas pelo caminho do host.
+    working_dir: ${PWD}
+    volumes:
+      - ${PWD}:${PWD}
+      - pnpm-store:/home/node/.pnpm-store
+      - cache:/home/node/.cache
+      # Acesso ao Docker do PC para o `supabase start`.
+      - /var/run/docker.sock:/var/run/docker.sock
+    group_add:
+      - ${DOCKER_GID:-999}
+    # Rede do host (Linux): o app enxerga o Supabase em localhost:54321
+    # e fica acessível em localhost:3000.
+    network_mode: host
+    environment:
+      - PNPM_STORE_DIR=/home/node/.pnpm-store
+    command: pnpm dev
+
+  # Imagem de produção, para testar localmente: make prod
+  app:
+    profiles: [prod]
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-}
+    image: zelo-app
+    env_file: .env.local
+    network_mode: host
+
+volumes:
+  pnpm-store:
+  cache:

@@ -1,0 +1,5 @@
+allowBuilds:
+  sharp: false
+  unrs-resolver: false
+  # Baixa o binário do Supabase CLI no postinstall.
+  supabase: true
