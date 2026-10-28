@@ -1,6 +1,9 @@
 // Lê os e-mails que o Supabase local entrega no Mailpit (nada sai de verdade).
 const MAILPIT_URL = process.env.MAILPIT_URL ?? "http://localhost:54324";
 
+// Prefixo dos e-mails criados pelos testes; a limpeza apaga só esses usuários.
+export const PREFIXO_E2E = "e2e-";
+
 type Busca = { messages_count: number; messages: { ID: string }[] };
 
 async function buscar(email: string): Promise<Busca> {
@@ -31,8 +34,13 @@ export async function aguardarCodigo(email: string, jaRecebidos = 0) {
   throw new Error(`Nenhum e-mail novo para ${email} no Mailpit.`);
 }
 
+// Esvazia a caixa do Mailpit.
+export async function apagarTodosEmails() {
+  await fetch(`${MAILPIT_URL}/api/v1/messages`, { method: "DELETE" });
+}
+
 // E-mail único por teste, para os testes não interferirem entre si.
 export function emailDeTeste(prefixo: string) {
   const sufixo = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  return `${prefixo}-${sufixo}@zelo.test`;
+  return `${PREFIXO_E2E}${prefixo}-${sufixo}@zelo.test`;
 }

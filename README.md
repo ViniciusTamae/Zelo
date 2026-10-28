@@ -45,7 +45,7 @@ make test-e2e   # navegador (Playwright, tela de celular) — precisa do db-star
 make test-all   # lint + tipos + todos os testes
 ```
 
-Os testes E2E leem o código de acesso no Mailpit e usam um e-mail `@zelo.test` diferente a cada execução.
+Os testes E2E leem o código de acesso no Mailpit e usam um e-mail `e2e-...@zelo.test` diferente a cada execução. Ao terminar, esvaziam o Mailpit e apagam os usuários `e2e-` que criaram. Para esvaziar a caixa à mão: `make mail-clear`.
 
 ## Imagem de produção
 

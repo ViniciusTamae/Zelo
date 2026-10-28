@@ -4,7 +4,7 @@ export PWD := $(CURDIR)
 
 RUN := docker compose run --rm dev
 
-.PHONY: build sh install dev lint test test-db test-e2e test-all db-start db-stop db-status db-reset db-types db-new prod
+.PHONY: build sh install dev lint test test-db test-e2e test-all mail-clear db-start db-stop db-status db-reset db-types db-new prod
 
 build:      ## Constrói a imagem de desenvolvimento
 	docker compose build dev
@@ -46,6 +46,9 @@ db-reset:   ## Recria o banco local aplicando todas as migrações
 
 db-types:   ## Gera src/lib/supabase/database.types.ts
 	$(RUN) pnpm db:types
+
+mail-clear: ## Esvazia a caixa de e-mails de teste (Mailpit)
+	$(RUN) curl -s -X DELETE http://localhost:54324/api/v1/messages
 
 db-new:     ## Cria migração: make db-new nome=descricao
 	$(RUN) pnpm supabase migration new $(nome)

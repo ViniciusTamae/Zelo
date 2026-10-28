@@ -5,6 +5,8 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: "./e2e",
   reporter: "list",
+  // Ao terminar: esvazia o Mailpit e apaga os usuários criados pelos testes.
+  globalTeardown: "./e2e/limpeza.ts",
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3000",
     locale: "pt-BR",
