@@ -15,6 +15,8 @@ import {
   imovelSchema,
   inquilinoSchema,
 } from "@/lib/imoveis/esquemas";
+import { gerarToken } from "@/lib/inquilinos/token";
+import { linkDoInquilino } from "@/lib/links";
 import { createClient } from "@/lib/supabase/server";
 
 const ERRO_GENERICO = "Não foi possível salvar agora. Tente de novo.";
@@ -62,10 +64,17 @@ export async function salvarImovel(
   redirect(`/imoveis/${imovelId}`);
 }
 
+// O link só existe na resposta destas ações: o banco guarda apenas o hash do
+// token, então ele é mostrado ao dono uma única vez.
+export type EstadoInquilino = EstadoFormulario & {
+  adicionado?: { nome: string; link: string };
+};
+export type EstadoNovoLink = { link?: string; erro?: string };
+
 export async function adicionarInquilino(
-  _anterior: EstadoFormulario,
+  _anterior: EstadoInquilino,
   formData: FormData,
-): Promise<EstadoFormulario> {
+): Promise<EstadoInquilino> {
   await obterProprietario();
   const valores = lerCampos(formData, ["nome", "email"]);
 
@@ -77,16 +86,18 @@ export async function adicionarInquilino(
     return { erros: errosPorCampo(dados.error), valores };
   }
 
-  // O token do link é gerado pelo banco. O RLS recusa imóvel de outro dono.
+  // O RLS recusa imóvel de outro dono.
+  const { token, hash } = gerarToken();
   const supabase = await createClient();
   const { error } = await supabase
     .from("inquilinos")
-    .insert({ ...dados.data, imovel_id: imovelId.data });
+    .insert({ ...dados.data, imovel_id: imovelId.data, token_hash: hash });
   if (error) return { erroGeral: ERRO_GENERICO, valores };
 
   refresh();
   return {
-    sucesso: `${dados.data.nome} foi adicionado. Compartilhe o link com ele.`,
+    sucesso: `Inquilino adicionado: ${dados.data.nome}. Compartilhe o link abaixo, ele só aparece agora.`,
+    adicionado: { nome: dados.data.nome, link: linkDoInquilino(token) },
   };
 }
 
@@ -106,17 +117,27 @@ export async function alterarAtivoInquilino(formData: FormData) {
   refresh();
 }
 
-// Troca o token: o link antigo deixa de funcionar na hora.
-export async function gerarNovoLink(formData: FormData) {
+// Troca o token: o link antigo deixa de funcionar na hora e o novo é mostrado
+// uma única vez.
+export async function gerarNovoLink(
+  _anterior: EstadoNovoLink,
+  formData: FormData,
+): Promise<EstadoNovoLink> {
   await obterProprietario();
   const id = idSchema.safeParse(formData.get("id"));
-  if (!id.success) return;
+  if (!id.success) return { erro: ERRO_GENERICO };
 
+  const { token, hash } = gerarToken();
   const supabase = await createClient();
-  const { error } = await supabase.rpc("gerar_novo_token_inquilino", {
-    inquilino: id.data,
-  });
-  if (error) throw error;
+  // Sem linha de volta = não existe ou é de outro dono (o RLS esconde).
+  const { data, error } = await supabase
+    .from("inquilinos")
+    .update({ token_hash: hash })
+    .eq("id", id.data)
+    .eq("ativo", true)
+    .select("id")
+    .maybeSingle();
+  if (error || !data) return { erro: ERRO_GENERICO };
 
-  refresh();
+  return { link: linkDoInquilino(token) };
 }

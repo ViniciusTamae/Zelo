@@ -91,14 +91,14 @@ isOneToOne: false
                   ]
                 },"inquilinos": {
                   Row: {
-                    "ativo": boolean,"atualizado_em": string,"criado_em": string,"email": string | null,"id": string,"imovel_id": string,"nome": string,"token": string
+                    "ativo": boolean,"atualizado_em": string,"criado_em": string,"email": string | null,"id": string,"imovel_id": string,"nome": string,"token_hash": string,"ultimo_acesso_em": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "ativo"?: boolean,"atualizado_em"?: string,"criado_em"?: string,"email"?: string | null,"id"?: string,"imovel_id": string,"nome": string,"token"?: string
+                    "ativo"?: boolean,"atualizado_em"?: string,"criado_em"?: string,"email"?: string | null,"id"?: string,"imovel_id": string,"nome": string,"token_hash": string,"ultimo_acesso_em"?: string | null
                   }
                   Update: {
-                    "ativo"?: boolean,"atualizado_em"?: string,"criado_em"?: string,"email"?: string | null,"id"?: string,"imovel_id"?: string,"nome"?: string,"token"?: string
+                    "ativo"?: boolean,"atualizado_em"?: string,"criado_em"?: string,"email"?: string | null,"id"?: string,"imovel_id"?: string,"nome"?: string,"token_hash"?: string,"ultimo_acesso_em"?: string | null
                   }
                   Relationships: [
                     {
@@ -181,9 +181,7 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "gerar_novo_token_inquilino":
-{ Args: { "inquilino": string }; Returns: string
-                           }
+            [_ in never]: never
           }
           Enums: {
             "autor_evento": "proprietario"|"inquilino"|"sistema","categoria_chamado": "hidraulica"|"eletrica"|"telhado"|"outros","destino_notificacao": "proprietario"|"inquilino","status_chamado": "aberto"|"em_andamento"|"resolvido"

@@ -1,6 +1,16 @@
 import Link from "next/link";
+import { Suspense } from "react";
 
-import { Navegacao } from "./navegacao";
+import { ListaNavegacao, Navegacao } from "./navegacao";
+
+// Enquanto o endereço atual não chega, mostra a mesma barra sem destaque.
+function NavegacaoComReserva({ className }: { className: string }) {
+  return (
+    <Suspense fallback={<ListaNavegacao className={className} pathname={null} />}>
+      <Navegacao className={className} />
+    </Suspense>
+  );
+}
 
 // Moldura das telas do proprietário logado: topo com a marca e navegação
 // (no celular, a navegação fica numa barra fixa embaixo, perto do polegar).
@@ -12,7 +22,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <Link href="/chamados" className="text-lg font-semibold">
             Zelo
           </Link>
-          <Navegacao className="hidden sm:flex" />
+          <NavegacaoComReserva className="hidden sm:flex" />
         </div>
       </header>
 
@@ -20,7 +30,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      <Navegacao className="fixed inset-x-0 bottom-0 border-t bg-card pb-[env(safe-area-inset-bottom)] sm:hidden" />
+      <NavegacaoComReserva className="fixed inset-x-0 bottom-0 border-t bg-card pb-[env(safe-area-inset-bottom)] sm:hidden" />
     </div>
   );
 }

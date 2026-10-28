@@ -1,7 +1,6 @@
 import "server-only";
 
 import { obterProprietario } from "@/lib/auth";
-import { linkDoInquilino } from "@/lib/links";
 import { createClient } from "@/lib/supabase/server";
 
 import { formatarEndereco } from "./endereco";
@@ -38,7 +37,7 @@ export async function obterImovel(id: string) {
   const { data, error } = await supabase
     .from("imoveis")
     .select(
-      "id, apelido, logradouro, numero, complemento, bairro, inquilinos(id, nome, email, token, ativo)",
+      "id, apelido, logradouro, numero, complemento, bairro, inquilinos(id, nome, email, ativo, ultimo_acesso_em)",
     )
     .eq("id", id)
     .order("ativo", { referencedTable: "inquilinos", ascending: false })
@@ -47,12 +46,6 @@ export async function obterImovel(id: string) {
   if (error) throw error;
   if (!data) return null;
 
-  return {
-    ...data,
-    endereco: formatarEndereco(data),
-    inquilinos: data.inquilinos.map(({ token, ...inquilino }) => ({
-      ...inquilino,
-      link: linkDoInquilino(token),
-    })),
-  };
+  // O link de cada inquilino não volta daqui: o banco só tem o hash do token.
+  return { ...data, endereco: formatarEndereco(data) };
 }

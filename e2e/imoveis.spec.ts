@@ -3,7 +3,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import { campo, entrar } from "./ajudantes";
 import { emailDeTeste } from "./mailpit";
 
-const LINK_INQUILINO = /\/c\/[0-9a-f]{64}$/;
+const LINK_INQUILINO = /^http:\/\/localhost:3000\/c\/[A-Za-z0-9_-]{43}$/;
 
 type Endereco = { rua: string; numero: string; complemento?: string; bairro: string };
 
@@ -19,13 +19,17 @@ async function cadastrarImovel(page: Page, apelido: string, endereco: Endereco) 
   await expect(page.getByRole("heading", { name: apelido })).toBeVisible();
 }
 
+// Adiciona e devolve o link, que aparece uma única vez abaixo do formulário.
 async function adicionarInquilino(page: Page, nome: string, email = "") {
   await campo(page, "Nome").fill(nome);
   await campo(page, "E-mail (opcional)").fill(email);
   await page.getByRole("button", { name: "Adicionar inquilino" }).click();
   await expect(page.getByRole("status")).toHaveText(
-    `${nome} foi adicionado. Compartilhe o link com ele.`,
+    `Inquilino adicionado: ${nome}. Compartilhe o link abaixo, ele só aparece agora.`,
   );
+  const link = page.getByLabel("Adicionar inquilino", { exact: true }).filter({ visible: true }).getByTestId("link-inquilino");
+  await expect(link).toHaveText(LINK_INQUILINO);
+  return (await link.textContent())!;
 }
 
 function rotuloVisivel(page: Page, texto: string) {
@@ -100,35 +104,42 @@ test("cadastro de imóvel e inquilinos com link exclusivo", async ({ page }) => 
     false,
   );
 
-  // Inquilinos: um com e-mail e outro sem
-  await adicionarInquilino(page, "Maria", "maria@exemplo.test");
-  await adicionarInquilino(page, "João");
-
-  const maria = cartaoDoInquilino(page, "Maria");
-  await expect(maria.getByText("maria@exemplo.test")).toBeVisible();
-  const linkOriginal = await maria.getByTestId("link-inquilino").textContent();
-  expect(linkOriginal).toMatch(LINK_INQUILINO);
-  const linkJoao = await cartaoDoInquilino(page, "João")
-    .getByTestId("link-inquilino")
-    .textContent();
-  expect(linkJoao).toMatch(LINK_INQUILINO);
+  // Inquilinos: um com e-mail e outro sem; cada um recebe um link diferente
+  const linkOriginal = await adicionarInquilino(page, "Maria", "maria@exemplo.test");
+  const linkJoao = await adicionarInquilino(page, "João");
   expect(linkJoao).not.toBe(linkOriginal);
 
-  // Gerar novo link troca o token
-  await abrirMaisOpcoes(maria);
-  await maria.getByRole("button", { name: "Gerar novo link" }).click();
-  await expect(maria.getByTestId("link-inquilino")).not.toHaveText(linkOriginal!);
-  await expect(maria.getByTestId("link-inquilino")).toHaveText(LINK_INQUILINO);
+  // O link só aparece na hora: os cartões não mostram link nenhum
+  const maria = cartaoDoInquilino(page, "Maria");
+  await expect(maria.getByText("maria@exemplo.test")).toBeVisible();
+  await expect(maria.getByText("Ainda não abriu o link")).toBeVisible();
+  await expect(maria.getByTestId("link-inquilino")).toHaveCount(0);
 
-  // Desativar esconde o link; reativar traz de volta
+  // Gerar novo link mostra outro token, uma vez
+  await maria.getByRole("button", { name: "Gerar e compartilhar novo link" }).click();
+  await expect(maria.getByRole("status")).toContainText("O anterior parou de funcionar.");
+  await expect(maria.getByTestId("link-inquilino")).toHaveText(LINK_INQUILINO);
+  await expect(maria.getByTestId("link-inquilino")).not.toHaveText(linkOriginal);
+  await expect(maria.getByRole("button", { name: "Compartilhar link" })).toBeVisible();
+
+  // Recarregando a página, o link some (o banco não tem como montá-lo de novo)
+  await page.reload();
+  await expect(maria.getByText("Ainda não abriu o link")).toBeVisible();
+  await expect(page.getByTestId("link-inquilino").filter({ visible: true })).toHaveCount(0);
+
+  // Desativar tira a opção de gerar link; reativar traz de volta
   await abrirMaisOpcoes(maria);
   await maria.getByRole("button", { name: "Desativar inquilino" }).click();
   await expect(maria.getByText("(desativado)")).toBeVisible();
-  await expect(maria.getByTestId("link-inquilino")).toHaveCount(0);
+  await expect(
+    maria.getByRole("button", { name: "Gerar e compartilhar novo link" }),
+  ).toHaveCount(0);
 
   await maria.getByRole("button", { name: "Reativar inquilino" }).click();
   await expect(maria.getByText("(desativado)")).toHaveCount(0);
-  await expect(maria.getByTestId("link-inquilino")).toBeVisible();
+  await expect(
+    maria.getByRole("button", { name: "Gerar e compartilhar novo link" }),
+  ).toBeVisible();
 
   // A lista de imóveis mostra o imóvel com os inquilinos ativos
   await page.getByRole("link", { name: "← Seus imóveis" }).click();

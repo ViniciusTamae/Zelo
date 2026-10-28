@@ -25,11 +25,13 @@ export async function obterProprietario() {
     .from("proprietarios")
     .select("id, nome, silencio_inicio, silencio_fim")
     .eq("id", claims.sub)
-    .single();
+    .maybeSingle();
+  if (error) throw error;
 
-  // O trigger do banco cria o proprietário junto com o usuário; se faltar, é erro de dados.
-  if (error || !proprietario) {
-    throw new Error("Proprietário não encontrado para o usuário logado.");
+  // O trigger do banco cria o proprietário junto com o usuário. Sem a linha,
+  // a conta foi apagada mas o cookie ainda vale: encerra a sessão.
+  if (!proprietario) {
+    redirect("/sair");
   }
 
   return { ...proprietario, email: claims.email ?? "" };

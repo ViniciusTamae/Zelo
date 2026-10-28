@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-import { campo, digitarCodigo, informarNome, pedirCodigo } from "./ajudantes";
+import { apagarUsuarioPorEmail } from "./admin";
+import { campo, digitarCodigo, entrar, informarNome, pedirCodigo } from "./ajudantes";
 import {
   aguardarCodigo,
   aguardarLinkDoCodigo,
@@ -141,4 +142,19 @@ test("usar outro e-mail volta para a primeira etapa com o e-mail preenchido", as
   await expect(
     page.getByRole("button", { name: "Receber código por e-mail" }),
   ).toBeVisible();
+});
+
+test("se a conta foi apagada, a sessão que sobrou volta para entrar", async ({ page }) => {
+  const email = emailDeTeste("apagado");
+  await entrar(page, email);
+
+  // O cookie continua válido, mas o usuário não existe mais
+  await apagarUsuarioPorEmail(email);
+  await page.goto("/imoveis");
+
+  await expect(page).toHaveURL(/\/entrar$/);
+  await expect(page.getByLabel("E-mail")).toBeVisible();
+  // E não volta sozinho para o app: a sessão foi encerrada
+  await page.goto("/chamados");
+  await expect(page).toHaveURL(/\/entrar$/);
 });

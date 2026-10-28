@@ -11,15 +11,25 @@ const ITENS: { href: string; texto: string; icone: LucideIcon }[] = [
   { href: "/ajustes", texto: "Ajustes", icone: Settings },
 ];
 
-// A seção atual fica em negrito e escura (a cor principal é só do botão de ação).
+// Lê o endereço atual (só existe na requisição): use dentro de um <Suspense>
+// com <ListaNavegacao pathname={null} /> como reserva.
 export function Navegacao({ className }: { className?: string }) {
-  const pathname = usePathname();
+  return <ListaNavegacao className={className} pathname={usePathname()} />;
+}
 
+// A seção atual fica em negrito e escura (a cor principal é só do botão de ação).
+export function ListaNavegacao({
+  className,
+  pathname,
+}: {
+  className?: string;
+  pathname: string | null;
+}) {
   return (
     <nav aria-label="Principal" className={className}>
       <ul className="mx-auto flex w-full max-w-2xl sm:gap-1">
         {ITENS.map(({ href, texto, icone: Icone }) => {
-          const atual = pathname === href || pathname.startsWith(`${href}/`);
+          const atual = pathname === href || Boolean(pathname?.startsWith(`${href}/`));
           return (
             <li key={href} className="flex-1 sm:flex-none">
               <Link

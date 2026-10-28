@@ -1,5 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
-
+import { clienteAdmin } from "./admin";
 import { apagarTodosEmails, PREFIXO_E2E } from "./mailpit";
 
 // Roda ao fim dos testes E2E (globalTeardown): esvazia o Mailpit e apaga os
@@ -8,12 +7,7 @@ import { apagarTodosEmails, PREFIXO_E2E } from "./mailpit";
 export default async function limpeza() {
   await apagarTodosEmails();
 
-  process.loadEnvFile(".env.local");
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } },
-  );
+  const supabase = clienteAdmin();
 
   const { data, error } = await supabase.auth.admin.listUsers({
     perPage: 1000,

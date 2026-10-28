@@ -12,10 +12,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { obterImovel } from "@/lib/imoveis/dados";
+import { textoVistoEm } from "@/lib/inquilinos/visto";
+import { mensagemDoLink } from "@/lib/links";
 
-import { alterarAtivoInquilino, gerarNovoLink } from "../actions";
-import { BotaoCompartilhar } from "./botao-compartilhar";
+import { alterarAtivoInquilino } from "../actions";
 import { FormInquilino } from "./form-inquilino";
+import { NovoLink } from "./novo-link";
 
 export const metadata: Metadata = {
   title: "Imóvel | Zelo",
@@ -80,7 +82,7 @@ async function DetalheImovel({
         )}
       </section>
 
-      <Card>
+      <Card aria-label="Adicionar inquilino">
         <CardHeader>
           <CardTitle>Adicionar inquilino</CardTitle>
           <CardDescription>
@@ -89,7 +91,7 @@ async function DetalheImovel({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <FormInquilino imovelId={imovel.id} />
+          <FormInquilino imovelId={imovel.id} apelido={imovel.apelido} />
         </CardContent>
       </Card>
     </>
@@ -103,7 +105,7 @@ function CartaoInquilino({
   inquilino: Inquilino;
   apelido: string;
 }) {
-  const mensagem = `Olá, ${inquilino.nome}! Para pedir consertos no imóvel (${apelido}), use este link:`;
+  const mensagem = mensagemDoLink(inquilino.nome, apelido);
 
   return (
     <Card
@@ -120,35 +122,22 @@ function CartaoInquilino({
           )}
         </CardTitle>
         {inquilino.email && <CardDescription>{inquilino.email}</CardDescription>}
+        {inquilino.ativo && (
+          <CardDescription>{textoVistoEm(inquilino.ultimo_acesso_em)}</CardDescription>
+        )}
       </CardHeader>
 
       <CardContent className="flex flex-col gap-3">
         {inquilino.ativo ? (
           <>
-            <p
-              className="truncate rounded-md bg-muted px-3 py-2 font-mono text-sm select-all"
-              data-testid="link-inquilino"
-            >
-              {inquilino.link}
-            </p>
-            <BotaoCompartilhar link={inquilino.link} mensagem={mensagem} />
+            <NovoLink inquilinoId={inquilino.id} mensagem={mensagem} />
 
-            {/* Ações que cortam o acesso ficam escondidas para evitar toque sem querer. */}
+            {/* Ação que corta o acesso fica escondida para evitar toque sem querer. */}
             <details className="text-sm">
               <summary className="cursor-pointer text-muted-foreground">
                 Mais opções
               </summary>
               <div className="mt-3 flex flex-col gap-3">
-                <form action={gerarNovoLink} className="flex flex-col gap-1">
-                  <input type="hidden" name="id" value={inquilino.id} />
-                  <Button type="submit" variant="outline">
-                    Gerar novo link
-                  </Button>
-                  <span className="text-muted-foreground">
-                    O link atual para de funcionar. Use se ele foi perdido ou
-                    enviado para a pessoa errada.
-                  </span>
-                </form>
                 <form action={alterarAtivoInquilino} className="flex flex-col gap-1">
                   <input type="hidden" name="id" value={inquilino.id} />
                   <input type="hidden" name="ativo" value="false" />
