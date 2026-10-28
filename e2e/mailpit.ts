@@ -16,22 +16,38 @@ export async function contarEmails(email: string) {
   return (await buscar(email)).messages_count;
 }
 
-// Espera chegar um e-mail novo (além dos `jaRecebidos`) e devolve o código de 6 dígitos.
-export async function aguardarCodigo(email: string, jaRecebidos = 0) {
+type Mensagem = { Text: string; HTML: string };
+
+// Espera chegar um e-mail novo (além dos `jaRecebidos`) e devolve o conteúdo.
+async function aguardarMensagem(email: string, jaRecebidos = 0) {
   for (let tentativa = 0; tentativa < 40; tentativa++) {
     const busca = await buscar(email);
     if (busca.messages_count > jaRecebidos) {
       const resposta = await fetch(
         `${MAILPIT_URL}/api/v1/message/${busca.messages[0].ID}`,
       );
-      const { Text } = (await resposta.json()) as { Text: string };
-      const codigo = Text.match(/\b\d{6}\b/)?.[0];
-      if (!codigo) throw new Error(`E-mail sem código: ${Text}`);
-      return codigo;
+      return (await resposta.json()) as Mensagem;
     }
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
   throw new Error(`Nenhum e-mail novo para ${email} no Mailpit.`);
+}
+
+// Código de 6 dígitos do e-mail mais recente.
+export async function aguardarCodigo(email: string, jaRecebidos = 0) {
+  const { Text } = await aguardarMensagem(email, jaRecebidos);
+  const codigo = Text.match(/\b\d{6}\b/)?.[0];
+  if (!codigo) throw new Error(`E-mail sem código: ${Text}`);
+  return codigo;
+}
+
+// Endereço do botão "Abrir o Zelo com o código" do e-mail mais recente.
+export async function aguardarLinkDoCodigo(email: string, jaRecebidos = 0) {
+  const { HTML } = await aguardarMensagem(email, jaRecebidos);
+  const href = HTML.match(/href="([^"]*\/entrar\?[^"]*)"/)?.[1];
+  if (!href) throw new Error("E-mail sem o botão de entrar.");
+  // O HTML do e-mail escapa o & da query como &amp;
+  return href.replaceAll("&amp;", "&");
 }
 
 // Esvazia a caixa do Mailpit.

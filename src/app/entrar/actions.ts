@@ -1,35 +1,20 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { z } from "zod";
 
 import { createClient } from "@/lib/supabase/server";
 
-// Estado do fluxo de login, devolvido para o formulário só exibir.
-export type EstadoEntrar =
-  | { etapa: "email"; email?: string; erro?: string }
-  | { etapa: "codigo"; email: string; erro?: string; aviso?: string };
-
-// Limpa espaços e maiúsculas antes de validar (teclados de celular costumam
-// deixar espaço no fim ou começar com letra maiúscula).
-const emailSchema = z
-  .string()
-  .trim()
-  .toLowerCase()
-  .pipe(z.email("Informe um e-mail válido."));
-
-const codigoSchema = z
-  .string()
-  .trim()
-  .regex(/^\d{6}$/, "O código tem 6 números.");
+import { codigoSchema, emailSchema, type EstadoEntrar } from "./esquemas";
 
 // Login sem senha em duas etapas: o proprietário informa o e-mail, recebe um
 // código de 6 dígitos e digita no app. Funciona igual no navegador e na PWA.
 export async function entrar(
-  _anterior: EstadoEntrar,
+  anterior: EstadoEntrar,
   formData: FormData,
 ): Promise<EstadoEntrar> {
   const intencao = formData.get("intencao");
+  // Mantido nos erros para não reiniciar a espera do "Reenviar código".
+  const envio = anterior.etapa === "codigo" ? anterior.envio : undefined;
   const emailInformado = String(formData.get("email") ?? "");
 
   if (intencao === "trocar") {
@@ -55,16 +40,15 @@ export async function entrar(
     });
 
     if (error) {
-      return {
-        etapa: intencao === "reenviar" ? "codigo" : "email",
-        email: email.data,
-        erro: mensagemDeErro(error.code),
-      };
+      return intencao === "reenviar"
+        ? { etapa: "codigo", email: email.data, envio, erro: mensagemDeErro(error.code) }
+        : { etapa: "email", email: email.data, erro: mensagemDeErro(error.code) };
     }
 
     return {
       etapa: "codigo",
       email: email.data,
+      envio: crypto.randomUUID(),
       aviso: intencao === "reenviar" ? "Enviamos um novo código." : undefined,
     };
   }
@@ -75,25 +59,33 @@ export async function entrar(
       return {
         etapa: "codigo",
         email: email.data,
+        envio,
         erro: codigo.error.issues[0].message,
       };
     }
 
-    const { error } = await supabase.auth.verifyOtp({
+    const { data, error } = await supabase.auth.verifyOtp({
       email: email.data,
       token: codigo.data,
       type: "email",
     });
 
-    if (error) {
+    if (error || !data.user) {
       return {
         etapa: "codigo",
         email: email.data,
-        erro: mensagemDeErro(error.code),
+        envio,
+        erro: mensagemDeErro(error?.code),
       };
     }
 
-    redirect("/chamados");
+    // Primeiro acesso: ainda sem nome, pede só isso antes de abrir o app.
+    const { data: proprietario } = await supabase
+      .from("proprietarios")
+      .select("nome")
+      .eq("id", data.user.id)
+      .maybeSingle();
+    redirect(proprietario?.nome ? "/chamados" : "/boas-vindas");
   }
 
   return { etapa: "email", email: email.data };

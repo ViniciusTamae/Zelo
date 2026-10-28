@@ -36,6 +36,16 @@ make db-reset                # recria o banco local aplicando todas as migraçõ
 make db-types                # regenera src/lib/supabase/database.types.ts
 ```
 
+## E-mails do login
+
+No local, o Supabase Auth entrega os e-mails no Mailpit (http://localhost:54324). O modelo do e-mail com o código fica em `supabase/templates/codigo-acesso.html`.
+
+Em produção, o envio passa pelo Resend (o SMTP padrão do Supabase tem limite baixo de envios):
+
+1. No Resend, verificar o domínio (registros DNS) e criar uma API key.
+2. No painel do Supabase Cloud, em Authentication → SMTP Settings: host `smtp.resend.com`, porta `465`, usuário `resend`, senha = a API key e remetente com o domínio verificado. O bloco `[auth.email.smtp]` comentado em `supabase/config.toml` tem os mesmos valores.
+3. Conferir que o modelo do e-mail e o `site_url` do projeto apontam para o endereço publicado.
+
 ## Testes
 
 ```bash

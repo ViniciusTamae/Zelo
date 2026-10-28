@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import {
   Card,
@@ -8,13 +9,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+import { estadoDoLink } from "./esquemas";
 import { FormEntrar } from "./form-entrar";
 
 export const metadata: Metadata = {
   title: "Entrar | Zelo",
 };
 
-export default function EntrarPage() {
+export default function EntrarPage({ searchParams }: PageProps<"/entrar">) {
   return (
     <main className="flex flex-1 flex-col items-center justify-center px-4 py-10">
       <Card className="w-full max-w-sm">
@@ -25,9 +27,16 @@ export default function EntrarPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <FormEntrar />
+          {/* Os parâmetros da URL só existem na requisição: ficam atrás do Suspense. */}
+          <Suspense>
+            <FormDoLink searchParams={searchParams} />
+          </Suspense>
         </CardContent>
       </Card>
     </main>
   );
+}
+
+async function FormDoLink({ searchParams }: Pick<PageProps<"/entrar">, "searchParams">) {
+  return <FormEntrar estadoInicial={estadoDoLink(await searchParams)} />;
 }

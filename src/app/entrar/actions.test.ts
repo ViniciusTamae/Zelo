@@ -1,13 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { entrar, type EstadoEntrar } from "./actions";
+import { entrar } from "./actions";
+import type { EstadoEntrar } from "./esquemas";
 
-const { auth } = vi.hoisted(() => ({
+const { auth, proprietario } = vi.hoisted(() => ({
   auth: { signInWithOtp: vi.fn(), verifyOtp: vi.fn() },
+  // Linha de public.proprietarios lida depois do login
+  proprietario: { nome: "Ana" as string | null },
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({ auth }),
+  createClient: async () => ({
+    auth,
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: async () => ({ data: { nome: proprietario.nome }, error: null }),
+        }),
+      }),
+    }),
+  }),
 }));
 
 // O redirect do Next interrompe a execução lançando um erro; simulamos igual.
@@ -28,7 +40,8 @@ function formulario(dados: Record<string, string>) {
 beforeEach(() => {
   vi.clearAllMocks();
   auth.signInWithOtp.mockResolvedValue({ error: null });
-  auth.verifyOtp.mockResolvedValue({ error: null });
+  auth.verifyOtp.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+  proprietario.nome = "Ana";
 });
 
 describe("entrar: enviar código", () => {
@@ -59,6 +72,7 @@ describe("entrar: enviar código", () => {
     expect(estado).toEqual({
       etapa: "codigo",
       email: "dono@exemplo.com",
+      envio: expect.any(String),
       aviso: undefined,
     });
   });
@@ -112,6 +126,7 @@ describe("entrar: reenviar e trocar e-mail", () => {
     expect(estado).toEqual({
       etapa: "codigo",
       email: "dono@exemplo.com",
+      envio: expect.any(String),
       aviso: "Enviamos um novo código.",
     });
   });
@@ -164,7 +179,7 @@ describe("entrar: confirmar código", () => {
   );
 
   it("avisa quando o código está errado ou expirou", async () => {
-    auth.verifyOtp.mockResolvedValue({ error: { code: "otp_expired" } });
+    auth.verifyOtp.mockResolvedValue({ data: { user: null }, error: { code: "otp_expired" } });
 
     const estado = await entrar(
       naEtapaCodigo,
@@ -199,5 +214,16 @@ describe("entrar: confirmar código", () => {
       token: "123456",
       type: "email",
     });
+  });
+
+  it("no primeiro acesso (sem nome), vai para a tela de boas-vindas", async () => {
+    proprietario.nome = null;
+
+    await expect(
+      entrar(
+        naEtapaCodigo,
+        formulario({ intencao: "confirmar", email: "dono@exemplo.com", codigo: "123456" }),
+      ),
+    ).rejects.toThrow("REDIRECT:/boas-vindas");
   });
 });

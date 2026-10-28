@@ -16,11 +16,21 @@ export async function digitarCodigo(page: Page, codigo: string) {
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
 }
 
-// Faz o login completo pela tela (código lido no Mailpit) e termina na lista de chamados.
-export async function entrar(page: Page, email: string) {
+// Faz o login completo pela tela (código lido no Mailpit) e termina na lista
+// de chamados. No primeiro acesso, informa o nome na tela de boas-vindas.
+export async function entrar(page: Page, email: string, nome = "Proprietário de Teste") {
   await pedirCodigo(page, email);
   await digitarCodigo(page, await aguardarCodigo(email));
+  await expect(page).toHaveURL(/\/(chamados|boas-vindas)$/);
+  if (page.url().endsWith("/boas-vindas")) {
+    await informarNome(page, nome);
+  }
   await expect(page).toHaveURL(/\/chamados$/);
+}
+
+export async function informarNome(page: Page, nome: string) {
+  await campo(page, "Seu nome").fill(nome);
+  await page.getByRole("button", { name: "Continuar" }).click();
 }
 
 // Campo pelo nome acessível (o que o leitor de tela anuncia; o * dos

@@ -51,7 +51,7 @@ beforeEach(() => {
 });
 
 describe("proxy: controle de acesso", () => {
-  it.each(["/chamados", "/imoveis", "/imoveis/novo", "/ajustes"])(
+  it.each(["/chamados", "/imoveis", "/imoveis/novo", "/ajustes", "/boas-vindas"])(
     "sem sessão, %s redireciona para /entrar",
     async (caminho) => {
       const resposta = await updateSession(requisicao(caminho));

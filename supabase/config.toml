@@ -235,15 +235,17 @@ otp_length = 6
 # Zelo: 10 minutos para o código de acesso.
 otp_expiry = 600
 
-# Use a production-ready SMTP server
+# Zelo: em produção, o Supabase Auth envia pelo Resend (o SMTP padrão do
+# Supabase tem limite baixo de envios). No local fica desligado e tudo cai no
+# Mailpit. Para ligar: domínio verificado no Resend + RESEND_API_KEY (ver README).
 # [auth.email.smtp]
 # enabled = true
-# host = "smtp.sendgrid.net"
-# port = 587
-# user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+# host = "smtp.resend.com"
+# port = 465
+# user = "resend"
+# pass = "env(RESEND_API_KEY)"
+# admin_email = "nao-responda@seudominio.com.br"
+# sender_name = "Zelo"
 
 # Zelo: login do proprietário por código de 6 dígitos (signInWithOtp).
 # Usuário novo recebe "confirmation"; usuário existente recebe "magic_link".

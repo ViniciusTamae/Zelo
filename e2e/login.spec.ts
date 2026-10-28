@@ -1,7 +1,12 @@
 import { expect, test } from "@playwright/test";
 
-import { digitarCodigo, pedirCodigo } from "./ajudantes";
-import { aguardarCodigo, contarEmails, emailDeTeste } from "./mailpit";
+import { campo, digitarCodigo, informarNome, pedirCodigo } from "./ajudantes";
+import {
+  aguardarCodigo,
+  aguardarLinkDoCodigo,
+  contarEmails,
+  emailDeTeste,
+} from "./mailpit";
 
 for (const rota of ["/chamados", "/imoveis", "/ajustes"]) {
   test(`sem login, ${rota} manda para a tela de entrar`, async ({ page }) => {
@@ -18,7 +23,7 @@ test("a página inicial leva para entrar quando não há sessão", async ({ page
   await expect(page).toHaveURL(/\/entrar$/);
 });
 
-test("login completo: código errado, código certo, sessão e sair", async ({ page }) => {
+test("login completo: código errado, primeiro acesso com nome, sessão e sair", async ({ page }) => {
   const email = emailDeTeste("login");
 
   await pedirCodigo(page, email);
@@ -32,8 +37,12 @@ test("login completo: código errado, código certo, sessão e sair", async ({ p
     "Código inválido ou expirado. Confira o número ou peça um novo.",
   );
 
-  // Código certo abre a lista de chamados
+  // Código certo no primeiro acesso: pede só o nome
   await digitarCodigo(page, codigo);
+  await expect(page).toHaveURL(/\/boas-vindas$/);
+  await informarNome(page, "   ");
+  await expect(page.getByText("Informe seu nome.")).toBeVisible();
+  await informarNome(page, "Ana Souza");
   await expect(page).toHaveURL(/\/chamados$/);
   await expect(page.getByRole("heading", { name: "Chamados" })).toBeVisible();
 
@@ -46,6 +55,7 @@ test("login completo: código errado, código certo, sessão e sair", async ({ p
   await navegacao.getByRole("link", { name: "Imóveis" }).click();
   await expect(page.getByRole("heading", { name: "Seus imóveis" })).toBeVisible();
   await navegacao.getByRole("link", { name: "Ajustes" }).click();
+  await expect(page.getByText("Ana Souza")).toBeVisible();
   await expect(page.getByText(email)).toBeVisible();
   await expect(page.getByText("Das 21h às 8h")).toBeVisible();
 
@@ -54,23 +64,71 @@ test("login completo: código errado, código certo, sessão e sair", async ({ p
   await expect(page).toHaveURL(/\/entrar$/);
   await page.goto("/chamados");
   await expect(page).toHaveURL(/\/entrar$/);
+
+  // Segundo acesso: já tem nome, vai direto para os chamados
+  const recebidos = await contarEmails(email);
+  await page.waitForTimeout(1100); // intervalo mínimo entre envios no local
+  await pedirCodigo(page, email);
+  await digitarCodigo(page, await aguardarCodigo(email, recebidos));
+  await expect(page).toHaveURL(/\/chamados$/);
 });
 
-test("reenviar código: o código novo funciona", async ({ page }) => {
+test("botão do e-mail abre a tela com o código preenchido, sem entrar sozinho", async ({ browser }) => {
+  // Com "+", para conferir que o e-mail vai codificado no link
+  const email = emailDeTeste("link").replace("@", "+tag@");
+  const pedido = await browser.newPage();
+  await pedirCodigo(pedido, email);
+  const link = await aguardarLinkDoCodigo(email);
+  const codigo = await aguardarCodigo(email);
+  await pedido.close();
+
+  // Abre o link como se fosse no leitor de e-mail (outra aba, sem estado)
+  const page = await browser.newPage();
+  await page.goto(link);
+
+  await expect(page.getByText(email)).toBeVisible();
+  await expect(campo(page, "Código")).toHaveValue(codigo);
+  // E-mail e código saem da barra de endereço
+  await expect(page).toHaveURL(/\/entrar$/);
+  // Abrir o link não faz login: só o toque em "Entrar"
+  await page.goto("/chamados");
+  await expect(page).toHaveURL(/\/entrar$/);
+
+  await page.goto(link);
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await expect(page).toHaveURL(/\/boas-vindas$/);
+  await page.close();
+});
+
+test("reenviar código: liberado após 60 s e o código novo funciona", async ({ page }) => {
+  // Relógio controlado pelo teste, para não esperar 60 s de verdade
+  await page.clock.install();
   const email = emailDeTeste("reenvio");
 
   await pedirCodigo(page, email);
   await aguardarCodigo(email);
   const recebidos = await contarEmails(email);
 
-  // O Supabase exige um intervalo entre envios (1 s no local, 60 s na nuvem).
-  await page.waitForTimeout(1500);
-  await page.getByRole("button", { name: "Reenviar código" }).click();
+  const reenviar = page.getByRole("button", { name: /Reenviar código/ });
+  await expect(reenviar).toBeDisabled();
+  await expect(reenviar).toHaveText("Reenviar código em 60 s");
+
+  await page.clock.runFor(30_000);
+  await expect(reenviar).toHaveText("Reenviar código em 30 s");
+  await page.clock.runFor(30_000);
+  await expect(reenviar).toBeEnabled();
+  await expect(reenviar).toHaveText("Reenviar código");
+
+  // O Supabase local também exige 1 s (de verdade) entre envios
+  await page.waitForTimeout(1100);
+  await reenviar.click();
   await expect(page.getByRole("status")).toHaveText("Enviamos um novo código.");
+  // O novo envio reinicia a espera
+  await expect(reenviar).toBeDisabled();
 
   const codigoNovo = await aguardarCodigo(email, recebidos);
   await digitarCodigo(page, codigoNovo);
-  await expect(page).toHaveURL(/\/chamados$/);
+  await expect(page).toHaveURL(/\/boas-vindas$/);
 });
 
 test("usar outro e-mail volta para a primeira etapa com o e-mail preenchido", async ({ page }) => {
