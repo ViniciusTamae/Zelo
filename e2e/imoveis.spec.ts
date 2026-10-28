@@ -8,6 +8,7 @@ const LINK_INQUILINO = /\/c\/[0-9a-f]{64}$/;
 type Endereco = { rua: string; numero: string; complemento?: string; bairro: string };
 
 async function cadastrarImovel(page: Page, apelido: string, endereco: Endereco) {
+  await page.getByRole("link", { name: "Imóveis", exact: true }).click();
   await page.getByRole("link", { name: "Novo imóvel" }).click();
   await campo(page, "Apelido").fill(apelido);
   await campo(page, "Rua").fill(endereco.rua);
@@ -45,6 +46,7 @@ async function abrirMaisOpcoes(cartao: Locator) {
 
 test("cadastro de imóvel e inquilinos com link exclusivo", async ({ page }) => {
   await entrar(page, emailDeTeste("imoveis"));
+  await page.getByRole("link", { name: "Imóveis", exact: true }).click();
   await expect(page.getByText("Você ainda não cadastrou imóveis.")).toBeVisible();
 
   // Obrigatórios marcados com *; o opcional, não
@@ -69,7 +71,6 @@ test("cadastro de imóvel e inquilinos com link exclusivo", async ({ page }) => 
   await expect(campo(page, "Rua")).toHaveValue("   ");
 
   // Cadastro do imóvel, sem complemento
-  await page.goto("/painel");
   await cadastrarImovel(page, "Casa da Rua A", {
     rua: "Rua A",
     numero: "10",
@@ -129,7 +130,7 @@ test("cadastro de imóvel e inquilinos com link exclusivo", async ({ page }) => 
   await expect(maria.getByText("(desativado)")).toHaveCount(0);
   await expect(maria.getByTestId("link-inquilino")).toBeVisible();
 
-  // A lista do painel mostra o imóvel com os inquilinos ativos
+  // A lista de imóveis mostra o imóvel com os inquilinos ativos
   await page.getByRole("link", { name: "← Seus imóveis" }).click();
   const cartaoImovel = page.getByRole("link", { name: /Casa Azul/ });
   await expect(cartaoImovel).toContainText("Rua A, 10 - Fundos - Centro");
@@ -162,11 +163,11 @@ test("um proprietário não abre o imóvel de outro", async ({ browser }) => {
   await expect(beto.getByRole("heading", { name: "Imóvel não encontrado" })).toBeVisible();
 
   // Id que não é UUID também cai na página de não encontrado
-  await beto.goto("/painel/imoveis/nao-existe");
+  await beto.goto("/imoveis/nao-existe");
   await expect(beto.getByRole("heading", { name: "Imóvel não encontrado" })).toBeVisible();
 
-  // E o painel do Beto continua vazio
-  await beto.goto("/painel");
+  // E a lista do Beto continua vazia
+  await beto.goto("/imoveis");
   await expect(beto.getByText("Você ainda não cadastrou imóveis.")).toBeVisible();
   await contextoBeto.close();
 });

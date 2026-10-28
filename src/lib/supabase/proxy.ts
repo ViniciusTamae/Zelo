@@ -4,10 +4,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "./database.types";
 
 // Rotas que exigem proprietário logado.
-const ROTAS_PROTEGIDAS = ["/painel"];
+const ROTAS_PROTEGIDAS = ["/chamados", "/imoveis", "/ajustes"];
 
-// Renova a sessão do Auth a cada requisição e controla o acesso ao painel:
-// sem sessão em rota protegida → /entrar; já logado em /entrar → /painel.
+// Renova a sessão do Auth a cada requisição e controla o acesso ao app:
+// sem sessão em rota protegida → /entrar; já logado em /entrar → /chamados.
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -46,7 +46,7 @@ export async function updateSession(request: NextRequest) {
     return redirecionar(request, response, "/entrar");
   }
   if (logado && pathname === "/entrar") {
-    return redirecionar(request, response, "/painel");
+    return redirecionar(request, response, "/chamados");
   }
 
   return response;

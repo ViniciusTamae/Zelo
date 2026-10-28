@@ -16,11 +16,11 @@ export async function digitarCodigo(page: Page, codigo: string) {
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
 }
 
-// Faz o login completo pela tela (código lido no Mailpit) e termina no painel.
+// Faz o login completo pela tela (código lido no Mailpit) e termina na lista de chamados.
 export async function entrar(page: Page, email: string) {
   await pedirCodigo(page, email);
   await digitarCodigo(page, await aguardarCodigo(email));
-  await expect(page).toHaveURL(/\/painel$/);
+  await expect(page).toHaveURL(/\/chamados$/);
 }
 
 // Campo pelo nome acessível (o que o leitor de tela anuncia; o * dos

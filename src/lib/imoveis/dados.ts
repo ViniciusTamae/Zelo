@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatarEndereco } from "./endereco";
 import { idSchema } from "./esquemas";
 
-// Leituras do painel. O RLS garante que só voltam os imóveis do proprietário logado.
+// Leituras das telas de imóveis. O RLS garante que só voltam os imóveis do proprietário logado.
 
 export async function listarImoveis() {
   await obterProprietario();

@@ -23,10 +23,10 @@ export const metadata: Metadata = {
 
 export default function ImovelPage({
   params,
-}: PageProps<"/painel/imoveis/[id]">) {
+}: PageProps<"/imoveis/[id]">) {
   return (
     <>
-      <Link href="/painel" className="text-sm text-muted-foreground">
+      <Link href="/imoveis" className="text-sm text-muted-foreground">
         ← Seus imóveis
       </Link>
       <Suspense fallback={<p className="text-muted-foreground">Carregando...</p>}>
@@ -41,7 +41,7 @@ type Inquilino = Imovel["inquilinos"][number];
 
 async function DetalheImovel({
   params,
-}: Pick<PageProps<"/painel/imoveis/[id]">, "params">) {
+}: Pick<PageProps<"/imoveis/[id]">, "params">) {
   const { id } = await params;
   const imovel = await obterImovel(id);
   if (!imovel) notFound();
@@ -54,7 +54,7 @@ async function DetalheImovel({
           <p className="text-muted-foreground">{imovel.endereco}</p>
         </div>
         <Link
-          href={`/painel/imoveis/${imovel.id}/editar`}
+          href={`/imoveis/${imovel.id}/editar`}
           className={buttonVariants({ variant: "outline" })}
         >
           Editar

@@ -59,7 +59,7 @@ export async function salvarImovel(
     imovelId = data.id;
   }
 
-  redirect(`/painel/imoveis/${imovelId}`);
+  redirect(`/imoveis/${imovelId}`);
 }
 
 export async function adicionarInquilino(

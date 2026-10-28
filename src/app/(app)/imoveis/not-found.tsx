@@ -7,7 +7,7 @@ export default function NaoEncontrado() {
       <p className="text-muted-foreground">
         Ele pode ter sido removido ou o endereço está incorreto.
       </p>
-      <Link href="/painel" className="underline">
+      <Link href="/imoveis" className="underline">
         Voltar para seus imóveis
       </Link>
     </div>

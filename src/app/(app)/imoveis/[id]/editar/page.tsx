@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function EditarImovelPage({
   params,
-}: PageProps<"/painel/imoveis/[id]/editar">) {
+}: PageProps<"/imoveis/[id]/editar">) {
   return (
     <>
       <h1 className="text-2xl font-semibold">Editar imóvel</h1>
@@ -25,7 +25,7 @@ export default function EditarImovelPage({
 
 async function Edicao({
   params,
-}: Pick<PageProps<"/painel/imoveis/[id]/editar">, "params">) {
+}: Pick<PageProps<"/imoveis/[id]/editar">, "params">) {
   const { id } = await params;
   const imovel = await obterImovel(id);
   if (!imovel) notFound();

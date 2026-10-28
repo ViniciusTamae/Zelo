@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 
-export default function ErroPainel({
+export default function ErroApp({
   error,
   retry,
 }: {

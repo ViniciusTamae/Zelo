@@ -29,7 +29,7 @@ export function FormImovel({ imovel }: Props) {
   // Ids únicos: o Next mantém a tela anterior montada (escondida) na navegação.
   const id = useId();
   const valores: Record<string, string> | undefined = estado.valores ?? imovel;
-  const voltarPara = imovel ? `/painel/imoveis/${imovel.id}` : "/painel";
+  const voltarPara = imovel ? `/imoveis/${imovel.id}` : "/imoveis";
 
   function propsDoCampo(nome: string) {
     return {

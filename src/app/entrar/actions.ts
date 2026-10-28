@@ -93,7 +93,7 @@ export async function entrar(
       };
     }
 
-    redirect("/painel");
+    redirect("/chamados");
   }
 
   return { etapa: "email", email: email.data };

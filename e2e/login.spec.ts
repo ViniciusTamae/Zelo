@@ -3,12 +3,14 @@ import { expect, test } from "@playwright/test";
 import { digitarCodigo, pedirCodigo } from "./ajudantes";
 import { aguardarCodigo, contarEmails, emailDeTeste } from "./mailpit";
 
-test("sem login, o painel manda para a tela de entrar", async ({ page }) => {
-  await page.goto("/painel");
+for (const rota of ["/chamados", "/imoveis", "/ajustes"]) {
+  test(`sem login, ${rota} manda para a tela de entrar`, async ({ page }) => {
+    await page.goto(rota);
 
-  await expect(page).toHaveURL(/\/entrar$/);
-  await expect(page.getByLabel("E-mail")).toBeVisible();
-});
+    await expect(page).toHaveURL(/\/entrar$/);
+    await expect(page.getByLabel("E-mail")).toBeVisible();
+  });
+}
 
 test("a página inicial leva para entrar quando não há sessão", async ({ page }) => {
   await page.goto("/");
@@ -30,19 +32,27 @@ test("login completo: código errado, código certo, sessão e sair", async ({ p
     "Código inválido ou expirado. Confira o número ou peça um novo.",
   );
 
-  // Código certo abre o painel
+  // Código certo abre a lista de chamados
   await digitarCodigo(page, codigo);
-  await expect(page).toHaveURL(/\/painel$/);
-  await expect(page.getByRole("heading", { name: "Seus imóveis" })).toBeVisible();
+  await expect(page).toHaveURL(/\/chamados$/);
+  await expect(page.getByRole("heading", { name: "Chamados" })).toBeVisible();
 
-  // Já logado, /entrar volta para o painel
+  // Já logado, /entrar volta para os chamados
   await page.goto("/entrar");
-  await expect(page).toHaveURL(/\/painel$/);
+  await expect(page).toHaveURL(/\/chamados$/);
 
-  // Sair encerra a sessão: o painel volta a exigir login
+  // A navegação de baixo leva às outras seções
+  const navegacao = page.getByRole("navigation", { name: "Principal" });
+  await navegacao.getByRole("link", { name: "Imóveis" }).click();
+  await expect(page.getByRole("heading", { name: "Seus imóveis" })).toBeVisible();
+  await navegacao.getByRole("link", { name: "Ajustes" }).click();
+  await expect(page.getByText(email)).toBeVisible();
+  await expect(page.getByText("Das 21h às 8h")).toBeVisible();
+
+  // Sair (em Ajustes) encerra a sessão: o app volta a exigir login
   await page.getByRole("button", { name: "Sair" }).click();
   await expect(page).toHaveURL(/\/entrar$/);
-  await page.goto("/painel");
+  await page.goto("/chamados");
   await expect(page).toHaveURL(/\/entrar$/);
 });
 
@@ -60,7 +70,7 @@ test("reenviar código: o código novo funciona", async ({ page }) => {
 
   const codigoNovo = await aguardarCodigo(email, recebidos);
   await digitarCodigo(page, codigoNovo);
-  await expect(page).toHaveURL(/\/painel$/);
+  await expect(page).toHaveURL(/\/chamados$/);
 });
 
 test("usar outro e-mail volta para a primeira etapa com o e-mail preenchido", async ({ page }) => {

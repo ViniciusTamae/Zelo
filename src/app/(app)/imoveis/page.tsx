@@ -7,15 +7,15 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { listarImoveis } from "@/lib/imoveis/dados";
 
 export const metadata: Metadata = {
-  title: "Painel | Zelo",
+  title: "Imóveis | Zelo",
 };
 
-export default function PainelPage() {
+export default function ImoveisPage() {
   return (
     <>
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">Seus imóveis</h1>
-        <Link href="/painel/imoveis/novo" className={buttonVariants({ size: "lg" })}>
+        <Link href="/imoveis/novo" className={buttonVariants({ size: "lg" })}>
           Novo imóvel
         </Link>
       </div>
@@ -43,7 +43,7 @@ async function ListaImoveis() {
     <ul className="flex flex-col gap-3">
       {imoveis.map((imovel) => (
         <li key={imovel.id}>
-          <Link href={`/painel/imoveis/${imovel.id}`} className="block">
+          <Link href={`/imoveis/${imovel.id}`} className="block">
             <Card className="transition-colors hover:bg-muted/50">
               <CardHeader>
                 <CardTitle>{imovel.apelido}</CardTitle>

@@ -51,7 +51,7 @@ beforeEach(() => {
 });
 
 describe("proxy: controle de acesso", () => {
-  it.each(["/painel", "/painel/imoveis"])(
+  it.each(["/chamados", "/imoveis", "/imoveis/novo", "/ajustes"])(
     "sem sessão, %s redireciona para /entrar",
     async (caminho) => {
       const resposta = await updateSession(requisicao(caminho));
@@ -62,14 +62,14 @@ describe("proxy: controle de acesso", () => {
   );
 
   it("o redirecionamento descarta a query string", async () => {
-    const resposta = await updateSession(requisicao("/painel?x=1"));
+    const resposta = await updateSession(requisicao("/imoveis?x=1"));
 
     expect(resposta.headers.get("location")).toBe(
       "http://localhost:3000/entrar",
     );
   });
 
-  it.each(["/entrar", "/api/health", "/painelzinho"])(
+  it.each(["/entrar", "/api/health", "/imoveisx", "/c/abc"])(
     "sem sessão, %s segue normalmente",
     async (caminho) => {
       const resposta = await updateSession(requisicao(caminho));
@@ -78,21 +78,21 @@ describe("proxy: controle de acesso", () => {
     },
   );
 
-  it("com sessão, /painel segue normalmente", async () => {
+  it("com sessão, /imoveis segue normalmente", async () => {
     sessao.logado = true;
 
-    const resposta = await updateSession(requisicao("/painel"));
+    const resposta = await updateSession(requisicao("/imoveis"));
 
     expect(destino(resposta)).toBeNull();
   });
 
-  it("com sessão, /entrar redireciona para /painel", async () => {
+  it("com sessão, /entrar redireciona para /chamados", async () => {
     sessao.logado = true;
 
     const resposta = await updateSession(requisicao("/entrar"));
 
     expect(resposta.status).toBe(307);
-    expect(destino(resposta)).toBe("/painel");
+    expect(destino(resposta)).toBe("/chamados");
   });
 
   it("mantém os cookies renovados mesmo ao redirecionar", async () => {
@@ -101,7 +101,7 @@ describe("proxy: controle de acesso", () => {
 
     const resposta = await updateSession(requisicao("/entrar"));
 
-    expect(destino(resposta)).toBe("/painel");
+    expect(destino(resposta)).toBe("/chamados");
     expect(resposta.cookies.get("sb-auth-token")?.value).toBe("renovado");
   });
 
@@ -109,7 +109,7 @@ describe("proxy: controle de acesso", () => {
     sessao.logado = true;
     sessao.renovou = true;
 
-    const resposta = await updateSession(requisicao("/painel"));
+    const resposta = await updateSession(requisicao("/imoveis"));
 
     expect(resposta.cookies.get("sb-auth-token")?.value).toBe("renovado");
   });

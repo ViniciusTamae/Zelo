@@ -6,7 +6,7 @@ import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 // Camada de acesso: único lugar que lê a sessão e devolve o proprietário logado.
-// Páginas e Server Actions do painel chamam esta função em vez de ler cookies.
+// Páginas e Server Actions do app chamam esta função em vez de ler cookies.
 // Lê a requisição, então quem chamar precisa estar dentro de um <Suspense>.
 export async function obterProprietario() {
   // A validação da sessão compara a expiração com a hora atual: marca como

@@ -182,7 +182,7 @@ describe("entrar: confirmar código", () => {
     });
   });
 
-  it("com o código certo, confere no Supabase e vai para o painel", async () => {
+  it("com o código certo, confere no Supabase e vai para os chamados", async () => {
     await expect(
       entrar(
         naEtapaCodigo,
@@ -192,7 +192,7 @@ describe("entrar: confirmar código", () => {
           codigo: " 123456 ",
         }),
       ),
-    ).rejects.toThrow("REDIRECT:/painel");
+    ).rejects.toThrow("REDIRECT:/chamados");
 
     expect(auth.verifyOtp).toHaveBeenCalledWith({
       email: "dono@exemplo.com",
