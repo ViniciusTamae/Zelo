@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import { Logo } from "@/components/marca";
 import {
   Card,
   CardContent,
@@ -21,7 +22,11 @@ export default function EntrarPage({ searchParams }: PageProps<"/entrar">) {
     <main className="flex flex-1 flex-col items-center justify-center px-4 py-10">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-2xl">Zelo</CardTitle>
+          <CardTitle>
+            <h1>
+              <Logo altura={40} />
+            </h1>
+          </CardTitle>
           <CardDescription>
             Entre com seu e-mail. Você recebe um código, sem precisar de senha.
           </CardDescription>

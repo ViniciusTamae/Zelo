@@ -19,8 +19,8 @@ function moldura(conteudo: string) {
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#FAFAF9;padding:24px 12px;">
       <tr><td align="center">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:440px;background-color:#FFFFFF;border:1px solid #E7E5E4;border-radius:12px;overflow:hidden;font-family:Inter,Arial,Helvetica,sans-serif;color:#1C1917;">
-          <tr><td style="background-color:#0F766E;padding:20px 24px;">
-            <img src="${site}/brand/zelo-logo-branco.png" alt="Zelo" height="32" style="display:block;height:32px;border:0;color:#FFFFFF;font-size:24px;font-weight:600;" />
+          <tr><td align="center" style="background-color:#0F766E;padding:20px 24px;text-align:center;">
+            <img src="${site}/brand/zelo-logo-branco.png" alt="Zelo" height="32" style="display:block;margin:0 auto;height:32px;border:0;color:#FFFFFF;font-size:24px;font-weight:600;" />
           </td></tr>
           <tr><td style="padding:28px 24px 24px;">${conteudo}</td></tr>
         </table>

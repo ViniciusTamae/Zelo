@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { Logo, Simbolo } from "@/components/marca";
+
 import { ListaNavegacao, Navegacao } from "./navegacao";
 
 // Enquanto o endereço atual não chega, mostra a mesma barra sem destaque.
@@ -19,8 +21,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="flex flex-1 flex-col">
       <header className="border-b bg-card">
         <div className="mx-auto flex w-full max-w-2xl items-center justify-between px-4 py-3">
-          <Link href="/chamados" className="text-lg font-semibold">
-            Zelo
+          {/* No celular só o símbolo; no computador, a logo completa. */}
+          <Link href="/chamados" aria-label="Zelo, ir para os chamados">
+            <Simbolo className="sm:hidden" />
+            <Logo className="hidden sm:block" />
           </Link>
           <NavegacaoComReserva className="hidden sm:flex" />
         </div>

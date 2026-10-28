@@ -12,6 +12,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Zelo",
   description: "Pedidos de conserto dos seus imóveis, organizados em um só lugar.",
+  // O favicon.ico fica em src/app e o manifesto em src/app/manifest.ts.
+  icons: { apple: "/icons/apple-touch-icon.png" },
+  appleWebApp: { title: "Zelo", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {

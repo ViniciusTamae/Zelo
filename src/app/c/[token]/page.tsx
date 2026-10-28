@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { after } from "next/server";
 import { Suspense } from "react";
 
+import { Logo } from "@/components/marca";
 import {
   Card,
   CardContent,
@@ -24,7 +25,7 @@ export default function PaginaDoInquilino({ params }: PageProps<"/c/[token]">) {
   return (
     <main className="flex flex-1 flex-col items-center px-4 py-10">
       <div className="flex w-full max-w-md flex-col gap-6">
-        <p className="text-2xl font-semibold">Zelo</p>
+        <Logo altura={36} />
         <Suspense fallback={<p className="text-muted-foreground">Carregando...</p>}>
           <Conteudo params={params} />
         </Suspense>
