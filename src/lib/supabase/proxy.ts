@@ -3,8 +3,11 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import type { Database } from "./database.types";
 
-// Renova a sessão do Auth a cada requisição e devolve os cookies atualizados.
-// Ainda não protege nenhuma rota; isso entra junto com o login do painel.
+// Rotas que exigem proprietário logado.
+const ROTAS_PROTEGIDAS = ["/painel"];
+
+// Renova a sessão do Auth a cada requisição e controla o acesso ao painel:
+// sem sessão em rota protegida → /entrar; já logado em /entrar → /painel.
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -31,7 +34,35 @@ export async function updateSession(request: NextRequest) {
 
   // Não colocar código entre a criação do cliente e esta chamada:
   // é ela que valida o token e dispara a renovação dos cookies.
-  await supabase.auth.getClaims();
+  const { data } = await supabase.auth.getClaims();
+  const logado = Boolean(data?.claims);
+
+  const { pathname } = request.nextUrl;
+  const rotaProtegida = ROTAS_PROTEGIDAS.some(
+    (rota) => pathname === rota || pathname.startsWith(`${rota}/`),
+  );
+
+  if (!logado && rotaProtegida) {
+    return redirecionar(request, response, "/entrar");
+  }
+  if (logado && pathname === "/entrar") {
+    return redirecionar(request, response, "/painel");
+  }
 
   return response;
+}
+
+// Redireciona mantendo os cookies de sessão que acabaram de ser renovados.
+function redirecionar(
+  request: NextRequest,
+  response: NextResponse,
+  destino: string,
+) {
+  const url = request.nextUrl.clone();
+  url.pathname = destino;
+  url.search = "";
+
+  const redirect = NextResponse.redirect(url);
+  response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
+  return redirect;
 }

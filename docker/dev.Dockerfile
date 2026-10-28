@@ -9,6 +9,12 @@ RUN corepack enable \
 # Cliente docker: o Supabase CLI o usa para subir e inspecionar os containers locais.
 COPY --from=docker:29-cli /usr/local/bin/docker /usr/local/bin/docker
 
+# Dependências de sistema do Chromium para os testes E2E (Playwright).
+# Manter a versão igual à do @playwright/test no package.json.
+# O navegador em si é baixado depois (make test-e2e) para o volume de cache.
+RUN npx -y playwright@1.64.1 install-deps chromium \
+  && rm -rf /var/lib/apt/lists/* /root/.npm
+
 # Store do pnpm e cache do corepack em volumes nomeados
 # (criados aqui para já pertencerem ao usuário node).
 RUN mkdir -p /home/node/.pnpm-store /home/node/.cache \

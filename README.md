@@ -36,6 +36,17 @@ make db-reset                # recria o banco local aplicando todas as migraçõ
 make db-types                # regenera src/lib/supabase/database.types.ts
 ```
 
+## Testes
+
+```bash
+make test       # unitários (Vitest): regras das Server Actions e do proxy, sem banco
+make test-db    # banco (pgTAP): RLS e triggers — precisa do db-start
+make test-e2e   # navegador (Playwright, tela de celular) — precisa do db-start
+make test-all   # lint + tipos + todos os testes
+```
+
+Os testes E2E leem o código de acesso no Mailpit e usam um e-mail `@zelo.test` diferente a cada execução.
+
 ## Imagem de produção
 
 ```bash

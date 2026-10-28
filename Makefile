@@ -4,7 +4,7 @@ export PWD := $(CURDIR)
 
 RUN := docker compose run --rm dev
 
-.PHONY: build sh install dev lint db-start db-stop db-status db-reset db-types db-new prod
+.PHONY: build sh install dev lint test test-db test-e2e test-all db-start db-stop db-status db-reset db-types db-new prod
 
 build:      ## Constrói a imagem de desenvolvimento
 	docker compose build dev
@@ -20,6 +20,17 @@ dev:        ## Sobe o Next.js em http://localhost:3000
 
 lint:       ## ESLint + checagem de tipos
 	$(RUN) sh -c "pnpm lint && pnpm typecheck"
+
+test:       ## Testes unitários (Vitest)
+	$(RUN) pnpm test
+
+test-db:    ## Testes do banco: RLS e triggers (pgTAP; precisa do db-start)
+	$(RUN) pnpm test:db
+
+test-e2e:   ## Testes no navegador (Playwright; precisa do db-start)
+	$(RUN) pnpm test:e2e
+
+test-all: lint test test-db test-e2e  ## Roda tudo
 
 db-start:   ## Sobe o Supabase local
 	$(RUN) pnpm db:start
