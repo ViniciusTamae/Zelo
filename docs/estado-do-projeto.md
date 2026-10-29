@@ -26,7 +26,7 @@ App que centraliza os pedidos de conserto entre pequenos proprietários (2 a 15 
 
 ## O que já está pronto
 
-Há 15 commits; o último é `cef9153` (modo escuro). **O layout para computador está pronto, mas ainda não tem commit.**
+Tudo tem commit e está no GitHub, num repositório **privado**: https://github.com/ViniciusTamae/Zelo (branch `main`). O envio é por HTTPS com o `gh` logado na conta **ViniciusTamae**. A chave SSH deste computador é de outra conta (`Viniciustamaee`) e não tem acesso ao repositório.
 
 1. **Base:** esqueleto com Docker, Supabase local, migrações com RLS, `/api/health` e imagem de produção (Dockerfile standalone).
 2. **Login do proprietário:**
@@ -58,7 +58,7 @@ Há 15 commits; o último é `cef9153` (modo escuro). **O layout para computador
    - `StatusBadge` sempre com cor, ícone e texto;
    - logo redesenhada ("Zelo"), ícones da PWA e `manifest.ts`;
    - modo escuro que segue o celular, escolha do tema em Ajustes → Aparência (troca suave) e teste de contraste WCAG.
-9. **Layout para computador (sem commit):**
+9. **Layout para computador:**
    - kanban de chamados (Novos, Em andamento, Resolvidos dos últimos 30 dias) com painel lateral (`?chamado=`) e arrastar pelo mouse e pelo teclado (dnd-kit);
    - soltar em Resolvidos abre uma janela para recado e custo;
    - imóveis em grade e, na página do imóvel, inquilinos ao lado do cadastro;
@@ -92,7 +92,7 @@ Há 15 commits; o último é `cef9153` (modo escuro). **O layout para computador
 - **Histórico de gastos por imóvel com filtros:** período, imóvel e categoria, com total gasto. Também resolve o "ver todos" da coluna Resolvidos, que no computador mostra só 30 dias.
 - **PWA:** dica de "Adicionar à Tela de Início", principalmente no iPhone, e tela de "sem internet".
 - **Antes de publicar:** conferir o build de produção e a imagem Docker.
-- **Publicar:** GitHub → Supabase Cloud (região São Paulo) → Vercel → domínio no Resend. O passo a passo está no README.
+- **Publicar:** o GitHub já está feito (repositório privado). Faltam Supabase Cloud (região São Paulo), Vercel e domínio no Resend. O passo a passo está no README.
 
 ### Decisões em aberto
 
