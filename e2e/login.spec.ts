@@ -56,9 +56,8 @@ test("login completo: código errado, primeiro acesso com nome, sessão e sair",
   await navegacao.getByRole("link", { name: "Imóveis" }).click();
   await expect(page.getByRole("heading", { name: "Seus imóveis" })).toBeVisible();
   await navegacao.getByRole("link", { name: "Ajustes" }).click();
-  await expect(page.getByText("Ana Souza")).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Nome", exact: true })).toHaveValue("Ana Souza");
   await expect(page.getByText(email)).toBeVisible();
-  await expect(page.getByText("Das 21h às 8h")).toBeVisible();
 
   // Sair (em Ajustes) encerra a sessão: o app volta a exigir login
   await page.getByRole("button", { name: "Sair" }).click();

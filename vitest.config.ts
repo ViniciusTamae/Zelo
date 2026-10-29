@@ -5,6 +5,7 @@ export default defineConfig({
   resolve: { tsconfigPaths: true },
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts"],
+    // supabase/functions/_shared: código puro das Edge Functions (sem APIs do Deno).
+    include: ["src/**/*.test.ts", "supabase/functions/_shared/**/*.test.ts"],
   },
 });

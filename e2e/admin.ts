@@ -20,3 +20,11 @@ export async function apagarUsuarioPorEmail(email: string) {
   const { error: erroAoApagar } = await supabase.auth.admin.deleteUser(usuario.id);
   if (erroAoApagar) throw erroAoApagar;
 }
+
+export async function idDoUsuario(email: string) {
+  const { data, error } = await clienteAdmin().auth.admin.listUsers({ perPage: 1000 });
+  if (error) throw error;
+  const usuario = data.users.find((u) => u.email === email);
+  if (!usuario) throw new Error(`Usuário ${email} não encontrado.`);
+  return usuario.id;
+}

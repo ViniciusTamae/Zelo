@@ -4,7 +4,7 @@ export PWD := $(CURDIR)
 
 RUN := docker compose run --rm dev
 
-.PHONY: build sh install dev lint test test-db test-e2e test-all mail-clear db-start db-stop db-status db-reset db-migrate db-types db-new prod
+.PHONY: build sh install dev lint test test-db test-e2e test-all mail-clear db-start db-stop db-status db-reset db-migrate avisos-config db-types db-new prod
 
 build:      ## Constrói a imagem de desenvolvimento
 	docker compose build dev
@@ -43,9 +43,16 @@ db-status:  ## Mostra URLs e chaves do Supabase local
 
 db-reset:   ## Recria o banco local do zero (APAGA os dados locais)
 	$(RUN) pnpm db:reset
+	$(MAKE) avisos-config
 
 db-migrate: ## Aplica só as migrações novas, sem apagar os dados locais
 	$(RUN) pnpm supabase migration up --local
+
+avisos-config: ## Grava no Vault do banco local a URL das funções e o segredo dos avisos
+	@segredo=$$(grep '^NOTIFICACOES_SEGREDO=' supabase/functions/.env | cut -d= -f2-); \
+	docker exec -i supabase_db_zelo psql -q -U postgres -v ON_ERROR_STOP=1 \
+	  -v url='http://supabase_kong_zelo:8000/functions/v1' -v segredo="$$segredo" < supabase/avisos-config.sql && \
+	echo "Vault configurado (funcoes_url e notificacoes_segredo)."
 
 db-types:   ## Gera src/lib/supabase/database.types.ts
 	$(RUN) pnpm db:types
@@ -54,7 +61,7 @@ mail-clear: ## Esvazia a caixa de e-mails de teste (Mailpit)
 	$(RUN) curl -s -X DELETE http://localhost:54324/api/v1/messages
 
 db-new:     ## Cria migração: make db-new nome=descricao
-	$(RUN) pnpm supabase migration new $(nome)
+	$(RUN) pnpm supabase migration new $(nome) < /dev/null  # sem isso, o CLI espera SQL pelo stdin
 
 prod:       ## Builda e sobe a imagem de produção (lê .env.local)
 	docker compose --env-file .env.local --profile prod up --build app

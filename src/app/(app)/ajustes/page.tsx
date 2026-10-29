@@ -3,11 +3,12 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { obterProprietario } from "@/lib/auth";
-import { formatarSilencio } from "@/lib/proprietarios/horario";
 
 import { sair } from "../actions";
+import { AvisosAparelho } from "./avisos-aparelho";
+import { FormNome, FormSilencio } from "./formularios";
 
 export const metadata: Metadata = {
   title: "Ajustes | Zelo",
@@ -17,6 +18,16 @@ export default function AjustesPage() {
   return (
     <>
       <h1 className="text-2xl font-semibold">Ajustes</h1>
+
+      <Card aria-label="Avisos no celular">
+        <CardHeader>
+          <CardTitle>Avisos no celular</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <AvisosAparelho />
+        </CardContent>
+      </Card>
+
       <Suspense fallback={<p className="text-muted-foreground">Carregando...</p>}>
         <DadosDaConta />
       </Suspense>
@@ -36,34 +47,30 @@ async function DadosDaConta() {
 
   return (
     <>
-      <Card>
+      <Card aria-label="Horário de silêncio">
         <CardHeader>
-          <CardTitle>Sua conta</CardTitle>
+          <CardTitle>Horário de silêncio</CardTitle>
+          <CardDescription>
+            Nesse horário, só chamados urgentes avisam você na hora. Os outros
+            chegam quando o silêncio termina.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <dl className="flex flex-col gap-3">
-            <div>
-              <dt className="text-sm text-muted-foreground">Nome</dt>
-              <dd>{proprietario.nome || "Não informado"}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-muted-foreground">E-mail</dt>
-              <dd className="break-all">{proprietario.email}</dd>
-            </div>
-          </dl>
+          {/* O banco guarda "21:00:00"; o campo de hora usa "21:00". */}
+          <FormSilencio
+            inicio={proprietario.silencio_inicio.slice(0, 5)}
+            fim={proprietario.silencio_fim.slice(0, 5)}
+          />
         </CardContent>
       </Card>
 
-      <Card>
+      <Card aria-label="Sua conta">
         <CardHeader>
-          <CardTitle>Horário de silêncio</CardTitle>
+          <CardTitle>Sua conta</CardTitle>
+          <CardDescription className="break-all">{proprietario.email}</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-1">
-          <p>{formatarSilencio(proprietario.silencio_inicio, proprietario.silencio_fim)}</p>
-          <p className="text-sm text-muted-foreground">
-            Nesse horário, só chamados urgentes avisam você na hora. Os outros
-            chegam quando o silêncio termina.
-          </p>
+        <CardContent>
+          <FormNome nome={proprietario.nome ?? ""} />
         </CardContent>
       </Card>
     </>

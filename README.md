@@ -51,6 +51,23 @@ Em produção, o envio passa pelo Resend (o SMTP padrão do Supabase tem limite 
 2. No painel do Supabase Cloud, em Authentication → SMTP Settings: host `smtp.resend.com`, porta `465`, usuário `resend`, senha = a API key e remetente com o domínio verificado. O bloco `[auth.email.smtp]` comentado em `supabase/config.toml` tem os mesmos valores.
 3. Conferir que o modelo do e-mail e o `site_url` do projeto apontam para o endereço publicado.
 
+## Avisos no celular (Web Push)
+
+Quando chega um chamado, o proprietário recebe um aviso no celular. Das 21h às 8h (ajustável em Ajustes), só os urgentes avisam na hora; os outros chegam quando o silêncio termina.
+
+- O banco decide quando avisar (`calcular_entrega`, fuso de São Paulo) e chama a Edge Function `entregar-notificacoes` na hora (pg_net). O pg_cron chama a mesma função a cada 5 minutos para os avisos que estavam esperando e para tentar de novo os que falharam.
+- Segredos locais: `supabase/functions/.env` (modelo em `supabase/functions/.env.example`) e a chave pública em `NEXT_PUBLIC_VAPID_PUBLIC_KEY` no `.env.local`.
+- O banco precisa saber onde estão as funções e qual é o segredo: `make avisos-config` grava isso no Vault (o `make db-reset` já roda sozinho).
+- Função nova em `supabase/functions` só aparece depois de `make db-stop && make db-start`.
+- Para testar um aviso de verdade no seu computador: Chrome em http://localhost:3000 → Ajustes → "Ligar avisos neste aparelho" → "Enviar aviso de teste". No celular, só depois de publicar (o navegador exige HTTPS); no iPhone, com o Zelo na Tela de Início.
+
+Na nuvem (ao publicar):
+
+1. `supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:... NOTIFICACOES_SEGREDO=...`
+2. `supabase functions deploy entregar-notificacoes`
+3. No SQL Editor, o conteúdo de `supabase/avisos-config.sql` trocando `:'url'` por `'https://<projeto>.supabase.co/functions/v1'` e `:'segredo'` pelo mesmo `NOTIFICACOES_SEGREDO`.
+4. Na Vercel, `NEXT_PUBLIC_VAPID_PUBLIC_KEY` com a mesma chave pública.
+
 ## Testes
 
 ```bash

@@ -400,6 +400,11 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# Zelo: chamada pelo banco (pg_net/pg_cron), sem JWT de usuário; a função
+# confere o segredo do cabeçalho x-zelo-segredo.
+[functions.entregar-notificacoes]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
