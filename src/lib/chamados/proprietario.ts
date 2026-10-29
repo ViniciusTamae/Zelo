@@ -6,6 +6,7 @@ import { idSchema } from "@/lib/imoveis/esquemas";
 import { createClient } from "@/lib/supabase/server";
 
 import { ordenarAbertos } from "./ordem";
+import { DIAS_RESOLVIDOS_NO_QUADRO, montarQuadro } from "./quadro";
 
 // Leituras dos chamados pelo proprietário logado. O RLS garante que só voltam
 // chamados dos imóveis dele.
@@ -37,6 +38,29 @@ export async function listarChamados({ aba, imovelId }: { aba: Aba; imovelId?: s
   const { data, error } = await consulta;
   if (error) throw error;
   return aba === "abertos" ? ordenarAbertos(data) : data;
+}
+
+// Quadro do computador: tudo o que está aberto e os resolvidos dos últimos
+// dias (DIAS_RESOLVIDOS_NO_QUADRO), já separados por coluna.
+export async function listarQuadro({ imovelId }: { imovelId?: string }) {
+  await obterProprietario();
+  const supabase = await createClient();
+  const desde = new Date(Date.now() - DIAS_RESOLVIDOS_NO_QUADRO * 24 * 60 * 60 * 1000).toISOString();
+
+  let consulta = supabase
+    .from("chamados")
+    .select(
+      "id, categoria, descricao, urgente, status, criado_em, resolvido_em, valor, avaliacao_nota, foto_path, imoveis!chamados_imovel_id_fkey(apelido), inquilinos!chamados_inquilino_id_imovel_id_fkey(nome)",
+    )
+    .or(`status.in.(aberto,em_andamento),resolvido_em.gte."${desde}"`)
+    .limit(300);
+  if (imovelId && idSchema.safeParse(imovelId).success) {
+    consulta = consulta.eq("imovel_id", imovelId);
+  }
+
+  const { data, error } = await consulta;
+  if (error) throw error;
+  return montarQuadro(data);
 }
 
 // Quantos chamados em aberto (novos + em andamento), para o rótulo da aba.

@@ -103,6 +103,11 @@ select ok(
 -- Fila: reserva só as vencidas e não entrega duas vezes
 -- ---------------------------------------------------------------------------
 
+-- Tira da frente avisos pendentes de quem usa o banco local (desfeito no fim).
+update public.notificacoes set enviada = true
+where chamado_id is distinct from 'eeeeeeee-0000-0000-0000-000000000001'
+  and chamado_id is distinct from 'eeeeeeee-0000-0000-0000-000000000002';
+
 set local role service_role;
 select results_eq(
   $$select chamado_id from public.reservar_notificacoes('proprietario')$$,

@@ -75,7 +75,7 @@ Na nuvem (ao publicar):
 ```bash
 make test       # unitários (Vitest): regras das Server Actions e do proxy, sem banco
 make test-db    # banco (pgTAP): RLS e triggers — precisa do db-start
-make test-e2e   # navegador (Playwright, tela de celular) — precisa do db-start
+make test-e2e   # navegador (Playwright): celular e computador (*.pc.spec.ts) — precisa do db-start
 make test-all   # lint + tipos + todos os testes
 ```
 

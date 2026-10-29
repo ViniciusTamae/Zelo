@@ -40,11 +40,12 @@ async function ListaImoveis() {
   }
 
   return (
-    <ul className="flex flex-col gap-3">
+    // No computador, cartões em grade (3 por linha).
+    <ul className="flex flex-col gap-3 lg:grid lg:grid-cols-3">
       {imoveis.map((imovel) => (
         <li key={imovel.id}>
-          <Link href={`/imoveis/${imovel.id}`} className="block">
-            <Card className="transition-colors hover:bg-muted/50">
+          <Link href={`/imoveis/${imovel.id}`} className="block h-full">
+            <Card className="h-full transition-colors hover:bg-muted/50">
               <CardHeader>
                 <CardTitle>{imovel.apelido}</CardTitle>
                 <CardDescription>{imovel.endereco}</CardDescription>

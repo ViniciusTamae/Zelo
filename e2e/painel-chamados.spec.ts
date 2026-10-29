@@ -29,6 +29,8 @@ test("proprietário vê os chamados, abre o detalhe com foto e leva até resolvi
   // Lista: o urgente vem primeiro, mesmo sendo o mais recente
   await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Chamados" }).click();
   await expect(page.getByRole("link", { name: "Abertos (2)" })).toBeVisible();
+  // No celular, a lista com abas (o quadro é só do computador)
+  await expect(page.getByRole("region", { name: "Novos", exact: true })).toBeHidden();
   const lista = page.getByRole("list", { name: "Lista de chamados" });
   await expect(lista.getByRole("listitem")).toHaveCount(2);
   await expect(lista.getByRole("listitem").first()).toContainText("Hidráulica · Casa da Rua A");

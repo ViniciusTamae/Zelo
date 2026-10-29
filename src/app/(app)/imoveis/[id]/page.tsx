@@ -63,37 +63,40 @@ async function DetalheImovel({
         </Link>
       </div>
 
-      <section className="flex flex-col gap-3" aria-labelledby={`inquilinos-${imovel.id}`}>
-        <h2 id={`inquilinos-${imovel.id}`} className="text-lg font-semibold">
-          Inquilinos
-        </h2>
-        {imovel.inquilinos.length === 0 ? (
-          <p className="text-muted-foreground">
-            Nenhum inquilino ainda. Adicione abaixo para gerar o link de pedidos.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {imovel.inquilinos.map((inquilino) => (
-              <li key={inquilino.id}>
-                <CartaoInquilino inquilino={inquilino} apelido={imovel.apelido} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      {/* No computador: inquilinos à esquerda e o cadastro à direita. */}
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-8">
+        <section className="flex flex-col gap-3" aria-labelledby={`inquilinos-${imovel.id}`}>
+          <h2 id={`inquilinos-${imovel.id}`} className="text-lg font-semibold">
+            Inquilinos
+          </h2>
+          {imovel.inquilinos.length === 0 ? (
+            <p className="text-muted-foreground">
+              Nenhum inquilino ainda. Adicione um para gerar o link de pedidos.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {imovel.inquilinos.map((inquilino) => (
+                <li key={inquilino.id}>
+                  <CartaoInquilino inquilino={inquilino} apelido={imovel.apelido} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
-      <Card aria-label="Adicionar inquilino">
-        <CardHeader>
-          <CardTitle>Adicionar inquilino</CardTitle>
-          <CardDescription>
-            Cada inquilino recebe um link exclusivo para pedir consertos, sem
-            precisar de senha nem instalar nada.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <FormInquilino imovelId={imovel.id} apelido={imovel.apelido} />
-        </CardContent>
-      </Card>
+        <Card aria-label="Adicionar inquilino" className="lg:sticky lg:top-6">
+          <CardHeader>
+            <CardTitle>Adicionar inquilino</CardTitle>
+            <CardDescription>
+              Cada inquilino recebe um link exclusivo para pedir consertos, sem
+              precisar de senha nem instalar nada.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FormInquilino imovelId={imovel.id} apelido={imovel.apelido} />
+          </CardContent>
+        </Card>
+      </div>
     </>
   );
 }

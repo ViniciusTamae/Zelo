@@ -10,6 +10,7 @@ import { sair } from "../actions";
 import { Aparencia } from "./aparencia";
 import { AvisosAparelho } from "./avisos-aparelho";
 import { FormNome, FormSilencio } from "./formularios";
+import { ColunaEstreita } from "../coluna-estreita";
 
 export const metadata: Metadata = {
   title: "Ajustes | Zelo",
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
 
 export default function AjustesPage() {
   return (
-    <>
+    <ColunaEstreita>
       <h1 className="text-2xl font-semibold">Ajustes</h1>
 
       <Card aria-label="Avisos no celular">
@@ -48,7 +49,7 @@ export default function AjustesPage() {
           Sair
         </Button>
       </form>
-    </>
+    </ColunaEstreita>
   );
 }
 

@@ -1,5 +1,7 @@
 -- Testes do e-mail ao inquilino na mudança de status e do link de avaliação.
 -- Roda com: make test-db (tudo dentro de uma transação desfeita no fim).
+-- As contagens olham só os dados deste teste: o banco local pode ter dados
+-- de quem está usando o app.
 
 begin;
 create extension if not exists pgtap with schema extensions;
@@ -20,7 +22,7 @@ insert into public.chamados (id, imovel_id, inquilino_id, categoria, descricao) 
   ('eeeeeeee-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000001', null, 'outros', 'Porta');
 
 select is(
-  (select count(*)::int from public.notificacoes where destino = 'inquilino'),
+  (select count(*)::int from public.notificacoes where destino = 'inquilino' and inquilino_id = 'cccccccc-0000-0000-0000-000000000001'),
   0,
   'abrir o chamado não manda e-mail ao próprio inquilino'
 );
@@ -34,12 +36,12 @@ reset role;
 select results_eq(
   $$select n.inquilino_id, n.tipo, e.status_novo::text, e.nota
     from public.notificacoes n join public.eventos_chamado e on e.id = n.evento_id
-    where n.destino = 'inquilino'$$,
+    where n.destino = 'inquilino' and n.inquilino_id = 'cccccccc-0000-0000-0000-000000000001'$$,
   $$values ('cccccccc-0000-0000-0000-000000000001'::uuid, 'status_chamado', 'em_andamento', 'Vou passar amanhã')$$,
   'mudança de status gera um e-mail para o inquilino, ligado ao evento com o recado'
 );
 select ok(
-  (select entregar_em <= now() from public.notificacoes where destino = 'inquilino'),
+  (select entregar_em <= now() from public.notificacoes where destino = 'inquilino' and inquilino_id = 'cccccccc-0000-0000-0000-000000000001'),
   'o e-mail ao inquilino sai na hora (o silêncio é só do proprietário)'
 );
 select is(
@@ -52,7 +54,7 @@ select is(
 insert into public.eventos_chamado (chamado_id, autor, nota)
 values ('eeeeeeee-0000-0000-0000-000000000001', 'inquilino', 'Nota 5 de 5.');
 select is(
-  (select count(*)::int from public.notificacoes where destino = 'inquilino'),
+  (select count(*)::int from public.notificacoes where destino = 'inquilino' and inquilino_id = 'cccccccc-0000-0000-0000-000000000001'),
   1,
   'evento do próprio inquilino não vira e-mail'
 );
@@ -84,7 +86,7 @@ select is(
   'reabrir invalida o link de avaliação ainda não usado'
 );
 select is(
-  (select count(*)::int from public.notificacoes where destino = 'inquilino'),
+  (select count(*)::int from public.notificacoes where destino = 'inquilino' and inquilino_id = 'cccccccc-0000-0000-0000-000000000001'),
   3,
   'cada mudança de status (em andamento, resolvido, reaberto) é um e-mail'
 );
