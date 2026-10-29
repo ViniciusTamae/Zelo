@@ -73,6 +73,21 @@ async function DetalheChamado({ params }: Pick<PageProps<"/chamados/[id]">, "par
               <dd>{formatarReais(chamado.valor)}</dd>
             </>
           )}
+          {chamado.avaliacao_nota !== null && (
+            <>
+              <dt className="text-muted-foreground">Avaliação</dt>
+              <dd>
+                <span aria-hidden="true" className="text-amber-500">
+                  {"★".repeat(chamado.avaliacao_nota)}
+                  {"☆".repeat(5 - chamado.avaliacao_nota)}
+                </span>{" "}
+                {chamado.avaliacao_nota} de 5
+                {chamado.avaliacao_comentario && (
+                  <span className="block text-muted-foreground">&quot;{chamado.avaliacao_comentario}&quot;</span>
+                )}
+              </dd>
+            </>
+          )}
         </dl>
       </div>
 

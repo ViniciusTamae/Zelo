@@ -4,8 +4,15 @@ import { refresh } from "next/cache";
 import { after } from "next/server";
 
 import { emailSchema } from "@/app/entrar/esquemas";
+import { avaliarPeloLinkDoInquilino } from "@/lib/chamados/avaliacao";
 import { abrirChamado, LimiteDeChamados } from "@/lib/chamados/inquilino";
-import { CAMPOS_CHAMADO, chamadoSchema, validarFoto } from "@/lib/chamados/esquemas";
+import {
+  AGRADECIMENTO_AVALIACAO,
+  avaliacaoSchema,
+  CAMPOS_CHAMADO,
+  chamadoSchema,
+  validarFoto,
+} from "@/lib/chamados/esquemas";
 import { errosPorCampo, lerCampos, type EstadoFormulario } from "@/lib/formularios";
 import { buscarInquilinoPeloLink } from "@/lib/inquilinos/acesso";
 import { reenviarLinkPorEmail } from "@/lib/inquilinos/reenvio";
@@ -80,4 +87,30 @@ export async function abrirChamadoDoInquilino(
 
   refresh();
   return { enviado: true };
+}
+
+// Avaliação feita na página de pedidos (para quem não tem e-mail cadastrado,
+// ou prefere avaliar por aqui). Só vale para chamado resolvido do próprio inquilino.
+export async function avaliarChamadoDoInquilino(
+  _anterior: EstadoFormulario,
+  formData: FormData,
+): Promise<EstadoFormulario> {
+  const valores = lerCampos(formData, ["nota", "comentario"]);
+  const inquilino = await buscarInquilinoPeloLink(String(formData.get("token") ?? ""));
+  if (!inquilino) {
+    return { erroGeral: "Este link não funciona mais. Peça um novo ao proprietário.", valores };
+  }
+
+  const dados = avaliacaoSchema.safeParse(valores);
+  if (!dados.success) return { erros: errosPorCampo(dados.error), valores };
+
+  try {
+    const ok = await avaliarPeloLinkDoInquilino(inquilino.id, String(formData.get("chamado_id") ?? ""), dados.data);
+    if (!ok) return { erroGeral: "Este pedido não pode mais ser avaliado.", valores };
+  } catch (erro) {
+    console.error("Falha ao registrar avaliação:", erro);
+    return { erroGeral: "Não foi possível enviar agora. Tente de novo.", valores };
+  }
+  // Sem refresh: o agradecimento fica na tela; a nota aparece na próxima visita.
+  return { sucesso: AGRADECIMENTO_AVALIACAO };
 }

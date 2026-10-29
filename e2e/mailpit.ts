@@ -58,6 +58,20 @@ export async function aguardarLinkDoInquilino(email: string, jaRecebidos = 0) {
   return link;
 }
 
+// Espera o e-mail com este assunto e devolve o conteúdo.
+export async function aguardarEmailComAssunto(para: string, assunto: string) {
+  const query = encodeURIComponent(`to:"${para}" subject:"${assunto}"`);
+  for (let tentativa = 0; tentativa < 60; tentativa++) {
+    const busca = (await (await fetch(`${MAILPIT_URL}/api/v1/search?query=${query}`)).json()) as Busca;
+    if (busca.messages_count > 0) {
+      const resposta = await fetch(`${MAILPIT_URL}/api/v1/message/${busca.messages[0].ID}`);
+      return (await resposta.json()) as Mensagem;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  throw new Error(`Nenhum e-mail "${assunto}" para ${para} no Mailpit.`);
+}
+
 // Esvazia a caixa do Mailpit.
 export async function apagarTodosEmails() {
   await fetch(`${MAILPIT_URL}/api/v1/messages`, { method: "DELETE" });

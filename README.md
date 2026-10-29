@@ -53,7 +53,7 @@ Em produção, o envio passa pelo Resend (o SMTP padrão do Supabase tem limite 
 
 ## Avisos no celular (Web Push)
 
-Quando chega um chamado, o proprietário recebe um aviso no celular. Das 21h às 8h (ajustável em Ajustes), só os urgentes avisam na hora; os outros chegam quando o silêncio termina.
+Quando chega um chamado, o proprietário recebe um aviso no celular. Quando o proprietário muda o status, o inquilino com e-mail cadastrado recebe um e-mail (com o recado, se houver); ao resolver, o e-mail traz o link de uso único da pesquisa de satisfação (`/avaliar/...`). A mesma Edge Function entrega os dois. Das 21h às 8h (ajustável em Ajustes), só os urgentes avisam na hora; os outros chegam quando o silêncio termina.
 
 - O banco decide quando avisar (`calcular_entrega`, fuso de São Paulo) e chama a Edge Function `entregar-notificacoes` na hora (pg_net). O pg_cron chama a mesma função a cada 5 minutos para os avisos que estavam esperando e para tentar de novo os que falharam.
 - Segredos locais: `supabase/functions/.env` (modelo em `supabase/functions/.env.example`) e a chave pública em `NEXT_PUBLIC_VAPID_PUBLIC_KEY` no `.env.local`.
@@ -63,7 +63,7 @@ Quando chega um chamado, o proprietário recebe um aviso no celular. Das 21h às
 
 Na nuvem (ao publicar):
 
-1. `supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:... NOTIFICACOES_SEGREDO=...`
+1. `supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:... NOTIFICACOES_SEGREDO=... APP_URL=https://... RESEND_FROM="Zelo <avisos@...>" RESEND_API_KEY=...` (lista completa em `supabase/functions/.env.example`)
 2. `supabase functions deploy entregar-notificacoes`
 3. No SQL Editor, o conteúdo de `supabase/avisos-config.sql` trocando `:'url'` por `'https://<projeto>.supabase.co/functions/v1'` e `:'segredo'` pelo mesmo `NOTIFICACOES_SEGREDO`.
 4. Na Vercel, `NEXT_PUBLIC_VAPID_PUBLIC_KEY` com a mesma chave pública.

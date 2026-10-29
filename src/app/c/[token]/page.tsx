@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { after } from "next/server";
 import { Suspense } from "react";
 
+import { FormAvaliacao } from "@/components/form-avaliacao";
 import { Logo } from "@/components/marca";
 import { StatusBadge } from "@/components/status-badge";
 import {
@@ -17,6 +18,7 @@ import { statusVisual } from "@/lib/chamados/status";
 import { formatarDataHora } from "@/lib/datas";
 import { buscarInquilinoPeloLink, registrarAcesso } from "@/lib/inquilinos/acesso";
 
+import { avaliarChamadoDoInquilino } from "./actions";
 import { PedidoDeConserto } from "./form-chamado";
 import { FormPerdiLink } from "./form-perdi-link";
 
@@ -102,6 +104,17 @@ async function Conteudo({ params }: Pick<PageProps<"/c/[token]">, "params">) {
                     <p className="text-xs text-muted-foreground">
                       Aberto em {formatarDataHora(chamado.criado_em)}
                     </p>
+                    {chamado.status === "resolvido" &&
+                      (chamado.avaliacao_nota ? (
+                        <p className="text-sm">Sua avaliação: {chamado.avaliacao_nota} de 5</p>
+                      ) : (
+                        <div className="mt-2 border-t pt-3">
+                          <FormAvaliacao
+                            acao={avaliarChamadoDoInquilino}
+                            campos={{ token, chamado_id: chamado.id }}
+                          />
+                        </div>
+                      ))}
                   </CardContent>
                 </Card>
               </li>

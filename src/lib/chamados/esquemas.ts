@@ -80,3 +80,20 @@ export const mudancaStatusSchema = z.object({
     .refine((valor) => valor !== undefined, "Informe um valor como 150 ou 1.234,56.")
     .refine((valor) => valor === undefined || valor === null || valor < 100_000_000, "Valor alto demais."),
 });
+
+export const AGRADECIMENTO_AVALIACAO =
+  "Obrigado pela avaliação! Ela ajuda o proprietário a cuidar melhor do imóvel.";
+
+// Pesquisa de satisfação do inquilino (nota de 1 a 5 e comentário opcional).
+export const avaliacaoSchema = z.object({
+  nota: z.coerce
+    .number("Escolha uma nota de 1 a 5.")
+    .int("Escolha uma nota de 1 a 5.")
+    .min(1, "Escolha uma nota de 1 a 5.")
+    .max(5, "Escolha uma nota de 1 a 5."),
+  comentario: z
+    .string()
+    .trim()
+    .max(500, "Use no máximo 500 caracteres.")
+    .transform((comentario) => comentario || null),
+});

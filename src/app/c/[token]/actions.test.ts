@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { abrirChamadoDoInquilino, pedirNovoLink } from "./actions";
+import { abrirChamadoDoInquilino, avaliarChamadoDoInquilino, pedirNovoLink } from "./actions";
 
-const { reenviar, depois, buscarInquilino, abrir, LimiteDeChamados } = vi.hoisted(() => ({
+const { reenviar, depois, buscarInquilino, abrir, avaliar, LimiteDeChamados } = vi.hoisted(() => ({
+  avaliar: vi.fn(),
   reenviar: vi.fn(),
   // Tarefas agendadas com after(); o teste roda quando quiser.
   depois: [] as (() => Promise<void>)[],
@@ -14,6 +15,7 @@ const { reenviar, depois, buscarInquilino, abrir, LimiteDeChamados } = vi.hoiste
 vi.mock("@/lib/inquilinos/reenvio", () => ({ reenviarLinkPorEmail: reenviar }));
 vi.mock("@/lib/inquilinos/acesso", () => ({ buscarInquilinoPeloLink: buscarInquilino }));
 vi.mock("@/lib/chamados/inquilino", () => ({ abrirChamado: abrir, LimiteDeChamados }));
+vi.mock("@/lib/chamados/avaliacao", () => ({ avaliarPeloLinkDoInquilino: avaliar }));
 vi.mock("next/cache", () => ({ refresh: vi.fn() }));
 vi.mock("next/server", () => ({
   after: (tarefa: () => Promise<void>) => depois.push(tarefa),
@@ -31,6 +33,7 @@ beforeEach(() => {
   reenviar.mockResolvedValue(undefined);
   buscarInquilino.mockResolvedValue({ id: "i1", nome: "Maria", imovel_id: "m1", apelidoImovel: "Casa" });
   abrir.mockResolvedValue("c1");
+  avaliar.mockResolvedValue(true);
 });
 
 describe("pedirNovoLink", () => {
@@ -131,5 +134,46 @@ describe("abrirChamadoDoInquilino", () => {
     expect(estado.erroGeral).toBe("Não foi possível enviar agora. Tente de novo.");
     expect(estado.valores?.descricao).toBe("Vazamento na pia");
     log.mockRestore();
+  });
+});
+
+function avaliacao(campos: Record<string, string>) {
+  const form = new FormData();
+  Object.entries({ token: "t".repeat(43), chamado_id: "c1", comentario: "", ...campos }).forEach(([campo, valor]) =>
+    form.set(campo, valor),
+  );
+  return form;
+}
+
+describe("avaliarChamadoDoInquilino", () => {
+  it("registra a nota do chamado do próprio inquilino", async () => {
+    const estado = await avaliarChamadoDoInquilino({}, avaliacao({ nota: "5", comentario: " Rápido " }));
+
+    expect(avaliar).toHaveBeenCalledWith("i1", "c1", { nota: 5, comentario: "Rápido" });
+    expect(estado.sucesso).toMatch(/^Obrigado pela avaliação!/);
+  });
+
+  it("sem nota, pede para escolher", async () => {
+    const estado = await avaliarChamadoDoInquilino({}, avaliacao({}));
+
+    expect(estado.erros?.nota).toBe("Escolha uma nota de 1 a 5.");
+    expect(avaliar).not.toHaveBeenCalled();
+  });
+
+  it("link que não vale mais: não avalia", async () => {
+    buscarInquilino.mockResolvedValue(null);
+
+    const estado = await avaliarChamadoDoInquilino({}, avaliacao({ nota: "4" }));
+
+    expect(estado.erroGeral).toBe("Este link não funciona mais. Peça um novo ao proprietário.");
+    expect(avaliar).not.toHaveBeenCalled();
+  });
+
+  it("chamado já avaliado, reaberto ou de outro inquilino: recusa", async () => {
+    avaliar.mockResolvedValue(false);
+
+    const estado = await avaliarChamadoDoInquilino({}, avaliacao({ nota: "4" }));
+
+    expect(estado.erroGeral).toBe("Este pedido não pode mais ser avaliado.");
   });
 });

@@ -25,14 +25,14 @@ export type Database = {
           Tables: {
             "chamados": {
                   Row: {
-                    "atualizado_em": string,"avaliacao_comentario": string | null,"avaliacao_nota": number | null,"categoria": Database["public"]['Enums']["categoria_chamado"],"criado_em": string,"descricao": string,"foto_path": string | null,"id": string,"imovel_id": string,"inquilino_id": string | null,"melhor_horario": string | null,"resolvido_em": string | null,"status": Database["public"]['Enums']["status_chamado"],"urgente": boolean,"valor": number | null
+                    "atualizado_em": string,"avaliacao_comentario": string | null,"avaliacao_nota": number | null,"avaliacao_token_hash": string | null,"categoria": Database["public"]['Enums']["categoria_chamado"],"criado_em": string,"descricao": string,"foto_path": string | null,"id": string,"imovel_id": string,"inquilino_id": string | null,"melhor_horario": string | null,"resolvido_em": string | null,"status": Database["public"]['Enums']["status_chamado"],"urgente": boolean,"valor": number | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "atualizado_em"?: string,"avaliacao_comentario"?: string | null,"avaliacao_nota"?: number | null,"categoria": Database["public"]['Enums']["categoria_chamado"],"criado_em"?: string,"descricao": string,"foto_path"?: string | null,"id"?: string,"imovel_id": string,"inquilino_id"?: string | null,"melhor_horario"?: string | null,"resolvido_em"?: string | null,"status"?: Database["public"]['Enums']["status_chamado"],"urgente"?: boolean,"valor"?: number | null
+                    "atualizado_em"?: string,"avaliacao_comentario"?: string | null,"avaliacao_nota"?: number | null,"avaliacao_token_hash"?: string | null,"categoria": Database["public"]['Enums']["categoria_chamado"],"criado_em"?: string,"descricao": string,"foto_path"?: string | null,"id"?: string,"imovel_id": string,"inquilino_id"?: string | null,"melhor_horario"?: string | null,"resolvido_em"?: string | null,"status"?: Database["public"]['Enums']["status_chamado"],"urgente"?: boolean,"valor"?: number | null
                   }
                   Update: {
-                    "atualizado_em"?: string,"avaliacao_comentario"?: string | null,"avaliacao_nota"?: number | null,"categoria"?: Database["public"]['Enums']["categoria_chamado"],"criado_em"?: string,"descricao"?: string,"foto_path"?: string | null,"id"?: string,"imovel_id"?: string,"inquilino_id"?: string | null,"melhor_horario"?: string | null,"resolvido_em"?: string | null,"status"?: Database["public"]['Enums']["status_chamado"],"urgente"?: boolean,"valor"?: number | null
+                    "atualizado_em"?: string,"avaliacao_comentario"?: string | null,"avaliacao_nota"?: number | null,"avaliacao_token_hash"?: string | null,"categoria"?: Database["public"]['Enums']["categoria_chamado"],"criado_em"?: string,"descricao"?: string,"foto_path"?: string | null,"id"?: string,"imovel_id"?: string,"inquilino_id"?: string | null,"melhor_horario"?: string | null,"resolvido_em"?: string | null,"status"?: Database["public"]['Enums']["status_chamado"],"urgente"?: boolean,"valor"?: number | null
                   }
                   Relationships: [
                     {
@@ -111,14 +111,14 @@ isOneToOne: false
                   ]
                 },"notificacoes": {
                   Row: {
-                    "chamado_id": string | null,"criado_em": string,"destino": Database["public"]['Enums']["destino_notificacao"],"entregar_em": string,"enviada": boolean,"enviada_em": string | null,"id": string,"inquilino_id": string | null,"proprietario_id": string | null,"tipo": string
+                    "chamado_id": string | null,"criado_em": string,"destino": Database["public"]['Enums']["destino_notificacao"],"entregar_em": string,"enviada": boolean,"enviada_em": string | null,"evento_id": string | null,"id": string,"inquilino_id": string | null,"proprietario_id": string | null,"reservada_ate": string | null,"tentativas": number,"tipo": string,"ultimo_erro": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "chamado_id"?: string | null,"criado_em"?: string,"destino": Database["public"]['Enums']["destino_notificacao"],"entregar_em"?: string,"enviada"?: boolean,"enviada_em"?: string | null,"id"?: string,"inquilino_id"?: string | null,"proprietario_id"?: string | null,"tipo": string
+                    "chamado_id"?: string | null,"criado_em"?: string,"destino": Database["public"]['Enums']["destino_notificacao"],"entregar_em"?: string,"enviada"?: boolean,"enviada_em"?: string | null,"evento_id"?: string | null,"id"?: string,"inquilino_id"?: string | null,"proprietario_id"?: string | null,"reservada_ate"?: string | null,"tentativas"?: number,"tipo": string,"ultimo_erro"?: string | null
                   }
                   Update: {
-                    "chamado_id"?: string | null,"criado_em"?: string,"destino"?: Database["public"]['Enums']["destino_notificacao"],"entregar_em"?: string,"enviada"?: boolean,"enviada_em"?: string | null,"id"?: string,"inquilino_id"?: string | null,"proprietario_id"?: string | null,"tipo"?: string
+                    "chamado_id"?: string | null,"criado_em"?: string,"destino"?: Database["public"]['Enums']["destino_notificacao"],"entregar_em"?: string,"enviada"?: boolean,"enviada_em"?: string | null,"evento_id"?: string | null,"id"?: string,"inquilino_id"?: string | null,"proprietario_id"?: string | null,"reservada_ate"?: string | null,"tentativas"?: number,"tipo"?: string,"ultimo_erro"?: string | null
                   }
                   Relationships: [
                     {
@@ -126,6 +126,12 @@ isOneToOne: false
       columns: ["chamado_id"]
 isOneToOne: false
       referencedRelation: "chamados"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "notificacoes_evento_id_fkey"
+      columns: ["evento_id"]
+isOneToOne: false
+      referencedRelation: "eventos_chamado"
       referencedColumns: ["id"]
     },{
       foreignKeyName: "notificacoes_inquilino_id_fkey"
@@ -181,9 +187,38 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "mudar_status_chamado":
+            "calcular_entrega":
+{ Args: { "momento": string,"silencio_fim": string,"silencio_inicio": string,"urgente": boolean }; Returns: string
+                           },
+"chamar_entrega":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"mudar_status_chamado":
 { Args: { "chamado": string,"nota"?: string,"novo_status": Database["public"]['Enums']["status_chamado"],"valor"?: number }; Returns: undefined
-                           }
+                           },
+"reservar_notificacoes":
+{ Args: { "limite"?: number,"para": Database["public"]['Enums']["destino_notificacao"] }; Returns: {
+              "chamado_id": string | null,
+"criado_em": string,
+"destino": Database["public"]['Enums']["destino_notificacao"],
+"entregar_em": string,
+"enviada": boolean,
+"enviada_em": string | null,
+"evento_id": string | null,
+"id": string,
+"inquilino_id": string | null,
+"proprietario_id": string | null,
+"reservada_ate": string | null,
+"tentativas": number,
+"tipo": string,
+"ultimo_erro": string | null
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "notificacoes"
+        isOneToOne: false
+        isSetofReturn: true
+      } }
           }
           Enums: {
             "autor_evento": "proprietario"|"inquilino"|"sistema","categoria_chamado": "hidraulica"|"eletrica"|"telhado"|"outros","destino_notificacao": "proprietario"|"inquilino","status_chamado": "aberto"|"em_andamento"|"resolvido"

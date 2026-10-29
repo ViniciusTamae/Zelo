@@ -15,6 +15,12 @@ describe("descreverEvento", () => {
     );
   });
 
+  it("avaliação do inquilino", () => {
+    expect(descreverEvento({ autor: "inquilino", status_anterior: null, status_novo: null }, "Maria")).toBe(
+      "Maria avaliou o conserto",
+    );
+  });
+
   it.each([
     ["aberto", "em_andamento", 'Você mudou para "Em andamento"'],
     ["em_andamento", "resolvido", "Você marcou como resolvido"],

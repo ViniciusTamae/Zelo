@@ -73,7 +73,7 @@ export async function obterChamado(id: string) {
   const { data, error } = await supabase
     .from("chamados")
     .select(
-      "id, categoria, descricao, urgente, status, melhor_horario, valor, criado_em, resolvido_em, foto_path, imoveis!chamados_imovel_id_fkey(id, apelido, logradouro, numero, complemento, bairro), inquilinos!chamados_inquilino_id_imovel_id_fkey(nome, email), eventos_chamado(id, autor, status_anterior, status_novo, nota, criado_em)",
+      "id, categoria, descricao, urgente, status, melhor_horario, valor, avaliacao_nota, avaliacao_comentario, criado_em, resolvido_em, foto_path, imoveis!chamados_imovel_id_fkey(id, apelido, logradouro, numero, complemento, bairro), inquilinos!chamados_inquilino_id_imovel_id_fkey(nome, email), eventos_chamado(id, autor, status_anterior, status_novo, nota, criado_em)",
     )
     .eq("id", id)
     .order("criado_em", { referencedTable: "eventos_chamado", ascending: false })

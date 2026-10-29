@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { chamadoSchema, mudancaStatusSchema, TAMANHO_MAXIMO_FOTO, validarFoto } from "./esquemas";
+import {
+  avaliacaoSchema,
+  chamadoSchema,
+  mudancaStatusSchema,
+  TAMANHO_MAXIMO_FOTO,
+  validarFoto,
+} from "./esquemas";
 
 const valido = { categoria: "hidraulica", descricao: "Vazamento na pia", melhor_horario: "" };
 
@@ -91,5 +97,16 @@ describe("mudancaStatusSchema", () => {
   it("recusa custo inválido com uma mensagem de exemplo", () => {
     const resultado = mudancaStatusSchema.safeParse({ ...base, valor: "cento e cinquenta" });
     expect(resultado.error?.issues[0].message).toBe("Informe um valor como 150 ou 1.234,56.");
+  });
+});
+
+describe("avaliacaoSchema", () => {
+  it("aceita nota de 1 a 5 e comentário em branco vira null", () => {
+    expect(avaliacaoSchema.parse({ nota: "4", comentario: "  " })).toEqual({ nota: 4, comentario: null });
+  });
+
+  it.each(["", "0", "6", "3.5", "abc"])("recusa a nota %j", (nota) => {
+    const resultado = avaliacaoSchema.safeParse({ nota, comentario: "" });
+    expect(resultado.error?.issues[0].message).toBe("Escolha uma nota de 1 a 5.");
   });
 });

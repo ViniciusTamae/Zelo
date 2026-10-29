@@ -17,7 +17,10 @@ const NOME_DO_STATUS: Record<StatusChamado, string> = {
 // Frase do histórico do chamado, do ponto de vista do proprietário.
 export function descreverEvento(evento: Evento, nomeInquilino?: string | null) {
   if (evento.autor === "inquilino") {
-    return `${nomeInquilino ?? "O inquilino"} abriu o chamado`;
+    // Sem mudança de status, é a avaliação (a nota vem no texto do evento).
+    return evento.status_novo
+      ? `${nomeInquilino ?? "O inquilino"} abriu o chamado`
+      : `${nomeInquilino ?? "O inquilino"} avaliou o conserto`;
   }
   if (!evento.status_novo) return "Recado";
   if (evento.status_anterior === "resolvido") return "Você reabriu o chamado";

@@ -78,7 +78,7 @@ export async function listarChamadosDoInquilino(inquilinoId: string) {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("chamados")
-    .select("id, categoria, descricao, urgente, status, criado_em")
+    .select("id, categoria, descricao, urgente, status, criado_em, avaliacao_nota")
     .eq("inquilino_id", inquilinoId)
     .order("criado_em", { ascending: false })
     .limit(50);
