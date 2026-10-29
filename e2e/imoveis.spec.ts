@@ -27,7 +27,7 @@ async function abrirMaisOpcoes(cartao: Locator) {
 
 test("cadastro de imóvel e inquilinos com link exclusivo", async ({ page }) => {
   await entrar(page, emailDeTeste("imoveis"));
-  await page.getByRole("link", { name: "Imóveis", exact: true }).click();
+  await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Imóveis" }).click();
   await expect(page.getByText("Você ainda não cadastrou imóveis.")).toBeVisible();
 
   // Obrigatórios marcados com *; o opcional, não

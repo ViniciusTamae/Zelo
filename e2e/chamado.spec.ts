@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { clienteAdmin } from "./admin";
-import { adicionarInquilino, cadastrarImovel, entrar } from "./ajudantes";
+import { adicionarInquilino, cadastrarImovel, entrar, escolherCategoria } from "./ajudantes";
 import { emailDeTeste } from "./mailpit";
 
 const FOTO = "e2e/fixtures/vazamento.jpg"; // 2000 x 1500
@@ -17,12 +17,6 @@ function dimensoesJpeg(bytes: Uint8Array) {
     i += 2 + tamanho;
   }
   throw new Error("JPEG sem dimensões");
-}
-
-// O rádio fica escondido; a pessoa toca no cartão da categoria.
-async function escolherCategoria(page: Page, rotulo: string) {
-  await page.locator("label").filter({ hasText: rotulo }).click();
-  await expect(page.getByRole("radio", { name: new RegExp(rotulo) })).toBeChecked();
 }
 
 async function prepararInquilino(page: Page, prefixo: string) {

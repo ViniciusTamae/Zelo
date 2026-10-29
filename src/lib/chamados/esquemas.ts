@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { CATEGORIAS, type Categoria } from "./categorias";
+import { lerValorEmReais } from "./valor";
 
 // Regras do formulário de chamado do inquilino.
 
@@ -63,3 +64,19 @@ export async function validarFoto(
   }
   return { foto: { bytes, tipo: formato.tipo, extensao: formato.extensao } };
 }
+
+// Mudança de status pelo proprietário (com recado e custo opcionais).
+export const mudancaStatusSchema = z.object({
+  chamado_id: z.uuid(),
+  status: z.enum(["aberto", "em_andamento", "resolvido"]),
+  nota: z
+    .string()
+    .trim()
+    .max(500, "Use no máximo 500 caracteres.")
+    .transform((nota) => nota || null),
+  valor: z
+    .string()
+    .transform((texto) => lerValorEmReais(texto))
+    .refine((valor) => valor !== undefined, "Informe um valor como 150 ou 1.234,56.")
+    .refine((valor) => valor === undefined || valor === null || valor < 100_000_000, "Valor alto demais."),
+});

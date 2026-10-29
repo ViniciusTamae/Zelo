@@ -1,19 +1,127 @@
+import { Camera } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Suspense } from "react";
+
+import { StatusBadge } from "@/components/status-badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { rotuloDaCategoria } from "@/lib/chamados/categorias";
+import {
+  contarAbertos,
+  listarChamados,
+  listarImoveisParaFiltro,
+  type Aba,
+} from "@/lib/chamados/proprietario";
+import { statusVisual } from "@/lib/chamados/status";
+import { formatarDataHora } from "@/lib/datas";
+import { cn } from "cn";
+
+import { FiltroImovel } from "./filtro-imovel";
 
 export const metadata: Metadata = {
   title: "Chamados | Zelo",
 };
 
-// Tela de entrada do app (start_url da PWA). A lista de chamados chega na
-// etapa do painel de chamados; por enquanto só o estado vazio.
-export default function ChamadosPage() {
+// Tela de entrada do app (start_url da PWA): chamados de todos os imóveis.
+export default function ChamadosPage({ searchParams }: PageProps<"/chamados">) {
   return (
     <>
       <h1 className="text-2xl font-semibold">Chamados</h1>
+      {/* Aba e filtro vêm da URL, que só existe na requisição. */}
+      <Suspense fallback={<p className="text-muted-foreground">Carregando...</p>}>
+        <ConteudoChamados searchParams={searchParams} />
+      </Suspense>
+    </>
+  );
+}
+
+async function ConteudoChamados({ searchParams }: Pick<PageProps<"/chamados">, "searchParams">) {
+  const parametros = await searchParams;
+  const aba: Aba = parametros.aba === "resolvidos" ? "resolvidos" : "abertos";
+  const imovelId = typeof parametros.imovel === "string" && parametros.imovel ? parametros.imovel : undefined;
+
+  const [imoveis, chamados, abertos] = await Promise.all([
+    listarImoveisParaFiltro(),
+    listarChamados({ aba, imovelId }),
+    contarAbertos(imovelId),
+  ]);
+
+  if (imoveis.length === 0) {
+    return (
       <p className="text-muted-foreground">
-        Nenhum chamado ainda. Quando um inquilino pedir um conserto pelo link
-        dele, o pedido aparece aqui.
+        Nenhum chamado ainda. Cadastre um imóvel em{" "}
+        <Link href="/imoveis" className="underline">
+          Imóveis
+        </Link>{" "}
+        e compartilhe o link com o inquilino: os pedidos dele aparecem aqui.
       </p>
+    );
+  }
+
+  const linkDaAba = (destino: Aba) =>
+    `/chamados?aba=${destino}${imovelId ? `&imovel=${imovelId}` : ""}`;
+
+  return (
+    <>
+      <nav aria-label="Situação dos chamados" className="grid grid-cols-2 rounded-lg bg-muted p-1">
+        {(
+          [
+            ["abertos", `Abertos (${abertos})`],
+            ["resolvidos", "Resolvidos"],
+          ] as const
+        ).map(([destino, texto]) => (
+          <Link
+            key={destino}
+            href={linkDaAba(destino)}
+            aria-current={aba === destino ? "page" : undefined}
+            className={cn(
+              "rounded-md py-2 text-center text-sm",
+              aba === destino ? "bg-card font-semibold shadow-sm" : "text-muted-foreground",
+            )}
+          >
+            {texto}
+          </Link>
+        ))}
+      </nav>
+
+      {imoveis.length > 1 && <FiltroImovel aba={aba} imovelId={imovelId} imoveis={imoveis} />}
+
+      {chamados.length === 0 ? (
+        <p className="text-muted-foreground">
+          {aba === "abertos"
+            ? "Nenhum chamado em aberto. Quando um inquilino pedir um conserto, ele aparece aqui."
+            : "Nenhum chamado resolvido ainda."}
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-3" aria-label="Lista de chamados">
+          {chamados.map((chamado) => (
+            <li key={chamado.id}>
+              <Link href={`/chamados/${chamado.id}`} className="block">
+                <Card size="sm" className="transition-colors hover:bg-muted/50">
+                  <CardContent className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold">
+                        {rotuloDaCategoria(chamado.categoria)} · {chamado.imoveis.apelido}
+                      </span>
+                      <StatusBadge status={statusVisual(chamado)} />
+                    </div>
+                    <p className="line-clamp-2 text-sm">{chamado.descricao}</p>
+                    <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                      {chamado.inquilinos?.nome ?? "Inquilino removido"} ·{" "}
+                      {aba === "resolvidos" && chamado.resolvido_em
+                        ? `Resolvido em ${formatarDataHora(chamado.resolvido_em)}`
+                        : `Aberto em ${formatarDataHora(chamado.criado_em)}`}
+                      {chamado.foto_path && (
+                        <Camera aria-label="Com foto" className="size-3.5" />
+                      )}
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </>
   );
 }

@@ -181,7 +181,9 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            [_ in never]: never
+            "mudar_status_chamado":
+{ Args: { "chamado": string,"nota"?: string,"novo_status": Database["public"]['Enums']["status_chamado"],"valor"?: number }; Returns: undefined
+                           }
           }
           Enums: {
             "autor_evento": "proprietario"|"inquilino"|"sistema","categoria_chamado": "hidraulica"|"eletrica"|"telhado"|"outros","destino_notificacao": "proprietario"|"inquilino","status_chamado": "aberto"|"em_andamento"|"resolvido"

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { chamadoSchema, TAMANHO_MAXIMO_FOTO, validarFoto } from "./esquemas";
+import { chamadoSchema, mudancaStatusSchema, TAMANHO_MAXIMO_FOTO, validarFoto } from "./esquemas";
 
 const valido = { categoria: "hidraulica", descricao: "Vazamento na pia", melhor_horario: "" };
 
@@ -74,5 +74,22 @@ describe("validarFoto", () => {
     const grande = arquivo([0xff, 0xd8, 0xff, ...new Array(TAMANHO_MAXIMO_FOTO).fill(0)]);
     const { erro } = await validarFoto(grande);
     expect(erro).toBe("A foto é muito grande. Tente tirar outra pela câmera.");
+  });
+});
+
+describe("mudancaStatusSchema", () => {
+  const base = { chamado_id: "2b0c4c8e-8a5b-4bb0-9a43-3f1f8f6f9b10", status: "resolvido", nota: "", valor: "" };
+
+  it("recado e custo em branco viram null", () => {
+    expect(mudancaStatusSchema.parse(base)).toMatchObject({ nota: null, valor: null });
+  });
+
+  it("lê o custo no formato brasileiro", () => {
+    expect(mudancaStatusSchema.parse({ ...base, valor: "1.234,56" }).valor).toBe(1234.56);
+  });
+
+  it("recusa custo inválido com uma mensagem de exemplo", () => {
+    const resultado = mudancaStatusSchema.safeParse({ ...base, valor: "cento e cinquenta" });
+    expect(resultado.error?.issues[0].message).toBe("Informe um valor como 150 ou 1.234,56.");
   });
 });

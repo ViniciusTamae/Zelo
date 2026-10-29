@@ -45,7 +45,7 @@ export const LINK_INQUILINO = /^http:\/\/localhost:3000\/c\/[A-Za-z0-9_-]{43}$/;
 export type Endereco = { rua: string; numero: string; complemento?: string; bairro: string };
 
 export async function cadastrarImovel(page: Page, apelido: string, endereco: Endereco) {
-  await page.getByRole("link", { name: "Imóveis", exact: true }).click();
+  await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Imóveis" }).click();
   await page.getByRole("link", { name: "Novo imóvel" }).click();
   await campo(page, "Apelido").fill(apelido);
   await campo(page, "Rua").fill(endereco.rua);
@@ -70,4 +70,32 @@ export async function adicionarInquilino(page: Page, nome: string, email = "") {
     .getByTestId("link-inquilino");
   await expect(link).toHaveText(LINK_INQUILINO);
   return (await link.textContent())!;
+}
+
+// O rádio da categoria fica escondido; a pessoa toca no cartão.
+export async function escolherCategoria(page: Page, rotulo: string) {
+  await page.locator("label").filter({ hasText: rotulo }).click();
+  await expect(page.getByRole("radio", { name: new RegExp(rotulo) })).toBeChecked();
+}
+
+// Inquilino abre um chamado na página do link (já aberta em `page`).
+export async function abrirChamado(
+  page: Page,
+  chamado: { categoria: string; descricao: string; urgente?: boolean; foto?: string; horario?: string },
+) {
+  await escolherCategoria(page, chamado.categoria);
+  await page.getByRole("textbox", { name: "O que aconteceu?" }).fill(chamado.descricao);
+  if (chamado.foto) {
+    await page.locator('input[name="foto"]').setInputFiles(chamado.foto);
+    await expect(page.getByRole("img", { name: "Prévia da foto escolhida" })).toBeVisible();
+  }
+  if (chamado.urgente) await page.getByRole("checkbox", { name: /É urgente/ }).check();
+  if (chamado.horario) {
+    await page
+      .getByRole("textbox", { name: "Melhor horário para o conserto (opcional)" })
+      .fill(chamado.horario);
+  }
+  await page.getByRole("button", { name: "Enviar pedido" }).click();
+  await expect(page.getByRole("status")).toContainText("Pedido enviado!");
+  await page.getByRole("button", { name: "Abrir outro pedido" }).click();
 }
