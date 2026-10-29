@@ -26,6 +26,8 @@ URLs locais:
 
 > O container usa a rede do host e o Docker do host (para o `supabase start` criar os containers do Supabase). Funciona em Linux.
 
+Se a página ficar recarregando sozinha, o CSS não mudar ou aparecer erro estranho depois de instalar um pacote, o cache do Next (`.next`) ficou velho: `make dev-limpar`.
+
 ## Banco de dados
 
 As migrações ficam em `supabase/migrations` e são a única forma de mudar o esquema (nada pelo painel).

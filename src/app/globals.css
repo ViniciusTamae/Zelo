@@ -2,8 +2,8 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* Sem modo escuro no MVP: o "dark:" dos componentes do shadcn só valeria com
-   a classe .dark, que nunca é aplicada (sem isto, seguiria o tema do sistema). */
+/* Modo escuro pela classe .dark no <html>, que o next-themes coloca seguindo
+   o modo do celular (src/components/tema.tsx). */
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -27,6 +27,7 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-estrela: var(--estrela);
   --color-status-urgente: var(--status-urgente-bg);
   --color-status-urgente-foreground: var(--status-urgente-fg);
   --color-status-novo: var(--status-novo-bg);
@@ -45,8 +46,7 @@
 }
 
 /* Paleta "Petróleo": uma única cor principal (#0F766E), usada só no botão
-   da ação principal de cada tela; o resto em neutros quentes (stone).
-   Sem modo escuro no MVP. */
+   da ação principal de cada tela; o resto em neutros quentes (stone). */
 :root {
   --background: #FAFAF9;
   --foreground: #1C1917;
@@ -77,6 +77,43 @@
   --status-andamento-fg: #92400E;
   --status-resolvido-bg: #DCFCE7;
   --status-resolvido-fg: #166534;
+
+  /* Estrelas da avaliação do inquilino. */
+  --estrela: #D97706;
+}
+
+/* Modo escuro: fundo quase preto quente (stone), nunca preto puro. O botão
+   principal fica num teal mais claro com texto escuro, por contraste. */
+.dark {
+  --background: #0C0A09;
+  --foreground: #F5F5F4;
+  --card: #1C1917;
+  --card-foreground: #F5F5F4;
+  --popover: #1C1917;
+  --popover-foreground: #F5F5F4;
+  --primary: #14B8A6;
+  --primary-foreground: #042F2E;
+  --secondary: #134E4A;
+  --secondary-foreground: #CCFBF1;
+  --muted: #292524;
+  --muted-foreground: #A8A29E;
+  --accent: #292524;
+  --accent-foreground: #F5F5F4;
+  --destructive: #F87171;
+  --border: #292524;
+  --input: #292524;
+  --ring: #2DD4BF;
+
+  --status-urgente-bg: #450A0A;
+  --status-urgente-fg: #FCA5A5;
+  --status-novo-bg: #172554;
+  --status-novo-fg: #93C5FD;
+  --status-andamento-bg: #451A03;
+  --status-andamento-fg: #FCD34D;
+  --status-resolvido-bg: #052E16;
+  --status-resolvido-fg: #86EFAC;
+
+  --estrela: #FBBF24;
 }
 
 @layer base {
@@ -88,5 +125,20 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* Troca de tema em Ajustes > Aparência: esmaecer suave entre o antes e o
+   depois (View Transitions), em vez de mudar tudo de uma vez. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 400ms;
+  animation-timing-function: ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
   }
 }

@@ -45,7 +45,7 @@ export function FormAvaliacao({
           {[5, 4, 3, 2, 1].map((nota) => (
             <label
               key={nota}
-              className="cursor-pointer text-muted-foreground hover:text-amber-500 has-checked:text-amber-500 has-focus-visible:rounded has-focus-visible:ring-3 has-focus-visible:ring-ring/50 [label:has(:checked)~&]:text-amber-500 [label:hover~&]:text-amber-500"
+              className="cursor-pointer text-muted-foreground hover:text-estrela has-checked:text-estrela has-focus-visible:rounded has-focus-visible:ring-3 has-focus-visible:ring-ring/50 [label:has(:checked)~&]:text-estrela [label:hover~&]:text-estrela"
             >
               <input
                 type="radio"

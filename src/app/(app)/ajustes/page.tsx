@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { obterProprietario } from "@/lib/auth";
 
 import { sair } from "../actions";
+import { Aparencia } from "./aparencia";
 import { AvisosAparelho } from "./avisos-aparelho";
 import { FormNome, FormSilencio } from "./formularios";
 
@@ -31,6 +32,15 @@ export default function AjustesPage() {
       <Suspense fallback={<p className="text-muted-foreground">Carregando...</p>}>
         <DadosDaConta />
       </Suspense>
+
+      <Card aria-label="Aparência">
+        <CardHeader>
+          <CardTitle>Aparência</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Aparencia />
+        </CardContent>
+      </Card>
 
       <form action={sair}>
         <Button type="submit" variant="outline" className="h-11 w-full text-base">

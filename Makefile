@@ -4,7 +4,7 @@ export PWD := $(CURDIR)
 
 RUN := docker compose run --rm dev
 
-.PHONY: build sh install dev lint test test-db test-e2e test-all mail-clear db-start db-stop db-status db-reset db-migrate avisos-config db-types db-new prod
+.PHONY: build sh install dev dev-limpar lint test test-db test-e2e test-all mail-clear db-start db-stop db-status db-reset db-migrate avisos-config db-types db-new prod
 
 build:      ## Constrói a imagem de desenvolvimento
 	docker compose build dev
@@ -17,6 +17,11 @@ install:    ## Instala as dependências
 
 dev:        ## Sobe o Next.js em http://localhost:3000
 	docker compose up dev
+
+dev-limpar: ## Reinicia o servidor de dev com o cache do Next (.next) limpo
+	docker compose stop dev
+	$(RUN) rm -rf .next
+	docker compose up -d dev
 
 lint:       ## ESLint + checagem de tipos
 	$(RUN) sh -c "pnpm lint && pnpm typecheck"
