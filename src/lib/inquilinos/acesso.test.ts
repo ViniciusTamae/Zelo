@@ -8,7 +8,14 @@ vi.mock("server-only", () => ({}));
 // Tabela de inquilinos simulada: a busca só funciona pelo hash, como no banco.
 const { banco } = vi.hoisted(() => ({
   banco: {
-    inquilinos: [] as { id: string; nome: string; imovel_id: string; token_hash: string; ativo: boolean }[],
+    inquilinos: [] as {
+      id: string;
+      nome: string;
+      imovel_id: string;
+      token_hash: string;
+      ativo: boolean;
+      arquivado_em?: string;
+    }[],
     consultas: 0,
   },
 }));
@@ -30,8 +37,8 @@ vi.mock("@/lib/supabase/admin", () => ({
           ),
         );
         if (!linha) return { data: null, error: null };
-        const { id, nome, imovel_id } = linha;
-        return { data: { id, nome, imovel_id, imoveis: { apelido: "Casa da Rua A" } }, error: null };
+        const { id, nome, imovel_id, arquivado_em = null } = linha;
+        return { data: { id, nome, imovel_id, imoveis: { apelido: "Casa da Rua A", arquivado_em } }, error: null };
       },
     };
     return { from: () => consulta };
@@ -55,6 +62,11 @@ describe("buscarInquilinoPeloLink", () => {
       imovel_id: "m1",
       apelidoImovel: "Casa da Rua A",
     });
+  });
+
+  it("imóvel arquivado: o link deixa de funcionar", async () => {
+    banco.inquilinos[0].arquivado_em = "2026-11-03T00:00:00Z";
+    expect(await buscarInquilinoPeloLink(original.token)).toBeNull();
   });
 
   it("token com formato inválido nem consulta o banco", async () => {

@@ -3,6 +3,7 @@
 import { BellOff, BellRing } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { useNotificarQuandoMudar } from "@/components/notificacoes";
 import { Button } from "@/components/ui/button";
 import { chaveParaBytes } from "@/lib/push/esquemas";
 
@@ -46,6 +47,8 @@ export function AvisosAparelho() {
   const [situacao, setSituacao] = useState<Situacao>("carregando");
   const [mensagem, setMensagem] = useState<{ texto: string; erro?: boolean } | null>(null);
   const [ocupado, setOcupado] = useState(false);
+  // A confirmação vira notificação no computador; o erro fica aqui.
+  useNotificarQuandoMudar(mensagem, mensagem?.erro ? undefined : mensagem?.texto);
 
   useEffect(() => {
     descobrirSituacao()
@@ -153,7 +156,7 @@ export function AvisosAparelho() {
       {mensagem && (
         <p
           role={mensagem.erro ? "alert" : "status"}
-          className={mensagem.erro ? "text-sm text-destructive" : "text-sm text-status-resolvido-foreground"}
+          className={mensagem.erro ? "text-sm text-destructive" : "text-sm text-status-resolvido-foreground lg:hidden"}
         >
           {mensagem.texto}
         </p>

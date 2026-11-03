@@ -8,7 +8,7 @@ vi.mock("server-only", () => ({}));
 const { banco, enviados } = vi.hoisted(() => ({
   banco: {
     // Inquilinos ativos com o e-mail procurado
-    encontrados: [] as { id: string; nome: string; imoveis: { apelido: string } }[],
+    encontrados: [] as { id: string; nome: string; imoveis: { apelido: string; arquivado_em?: string } }[],
     // Ids que o update consegue trocar (fora da espera de 10 min)
     trocaveis: new Set<string>(),
     updates: [] as { id: string; token_hash: string }[],
@@ -72,6 +72,13 @@ describe("reenviarLinkPorEmail", () => {
     banco.trocaveis.clear();
     await reenviarLinkPorEmail("maria@exemplo.com");
     expect(enviados).toHaveLength(0);
+  });
+
+  it("imóvel arquivado: não troca nem envia", async () => {
+    banco.encontrados[0].imoveis.arquivado_em = "2026-11-03T00:00:00Z";
+    await reenviarLinkPorEmail("maria@exemplo.com");
+    expect(enviados).toHaveLength(0);
+    expect(banco.updates).toHaveLength(0);
   });
 
   it("inquilina em dois imóveis recebe um link para cada", async () => {

@@ -71,14 +71,14 @@ isOneToOne: false
                   ]
                 },"imoveis": {
                   Row: {
-                    "apelido": string,"atualizado_em": string,"bairro": string,"complemento": string | null,"criado_em": string,"dono_id": string,"foto_path": string | null,"id": string,"logradouro": string,"numero": string
+                    "apelido": string,"arquivado_em": string | null,"atualizado_em": string,"bairro": string,"complemento": string | null,"criado_em": string,"dono_id": string,"foto_path": string | null,"id": string,"logradouro": string,"numero": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "apelido": string,"atualizado_em"?: string,"bairro": string,"complemento"?: string | null,"criado_em"?: string,"dono_id": string,"foto_path"?: string | null,"id"?: string,"logradouro": string,"numero": string
+                    "apelido": string,"arquivado_em"?: string | null,"atualizado_em"?: string,"bairro": string,"complemento"?: string | null,"criado_em"?: string,"dono_id": string,"foto_path"?: string | null,"id"?: string,"logradouro": string,"numero": string
                   }
                   Update: {
-                    "apelido"?: string,"atualizado_em"?: string,"bairro"?: string,"complemento"?: string | null,"criado_em"?: string,"dono_id"?: string,"foto_path"?: string | null,"id"?: string,"logradouro"?: string,"numero"?: string
+                    "apelido"?: string,"arquivado_em"?: string | null,"atualizado_em"?: string,"bairro"?: string,"complemento"?: string | null,"criado_em"?: string,"dono_id"?: string,"foto_path"?: string | null,"id"?: string,"logradouro"?: string,"numero"?: string
                   }
                   Relationships: [
                     {
@@ -192,6 +192,9 @@ isOneToOne: false
                            },
 "chamar_entrega":
 { Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"excluir_ou_arquivar_imovel":
+{ Args: { "imovel": string }; Returns: string
                            },
 "mudar_status_chamado":
 { Args: { "chamado": string,"nota"?: string,"novo_status": Database["public"]['Enums']["status_chamado"],"valor"?: number }; Returns: undefined

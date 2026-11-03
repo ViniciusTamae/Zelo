@@ -3,6 +3,7 @@
 import { useActionState, useId } from "react";
 
 import { CampoTexto } from "@/components/campo-texto";
+import { useNotificarQuandoMudar } from "@/components/notificacoes";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +19,8 @@ export function AcoesChamado({ chamadoId, status }: { chamadoId: string; status:
   const id = useId();
   const acoes = ACOES[status];
   const podeResolver = acoes.some(({ para }) => para === "resolvido");
+  // A confirmação vira notificação no computador (no celular fica aqui).
+  useNotificarQuandoMudar(estado, estado.sucesso);
 
   return (
     <form action={acao} className="flex flex-col gap-4">
@@ -58,7 +61,7 @@ export function AcoesChamado({ chamadoId, status }: { chamadoId: string; status:
         </p>
       )}
       {estado.sucesso && (
-        <p role="status" className="text-sm text-status-resolvido-foreground">
+        <p role="status" className="text-sm text-status-resolvido-foreground lg:hidden">
           {estado.sucesso}
         </p>
       )}

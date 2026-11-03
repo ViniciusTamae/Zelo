@@ -114,6 +114,44 @@ async function trocarFoto(
   return false;
 }
 
+export type EstadoExcluir = { erro?: string };
+
+// Exclui o imóvel (sem chamados) ou arquiva (com chamados, todos resolvidos).
+// A regra fica no banco (excluir_ou_arquivar_imovel), numa transação só.
+export async function excluirImovel(_anterior: EstadoExcluir, formData: FormData): Promise<EstadoExcluir> {
+  await obterProprietario();
+  const id = idSchema.safeParse(formData.get("id"));
+  if (!id.success) return { erro: ERRO_GENERICO };
+
+  const supabase = await createClient();
+  // A foto só é apagada se o imóvel for excluído; arquivado, ela fica.
+  const { data: imovel } = await supabase.from("imoveis").select("foto_path").eq("id", id.data).maybeSingle();
+  const { data: resultado, error } = await supabase.rpc("excluir_ou_arquivar_imovel", { imovel: id.data });
+  if (error) {
+    return {
+      erro:
+        error.code === "22023"
+          ? "Este imóvel tem chamados em aberto. Resolva os chamados antes de excluir."
+          : "Não foi possível excluir agora. Tente de novo.",
+    };
+  }
+  if (resultado === "excluido" && imovel?.foto_path) await apagarFotoDoImovel(supabase, imovel.foto_path);
+
+  redirect(`/imoveis?aviso=${resultado === "excluido" ? "excluido" : "arquivado"}`);
+}
+
+// Desarquivar volta o imóvel para a lista; os links dos inquilinos voltam a funcionar.
+export async function desarquivarImovel(formData: FormData) {
+  await obterProprietario();
+  const id = idSchema.safeParse(formData.get("id"));
+  if (!id.success) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("imoveis").update({ arquivado_em: null }).eq("id", id.data);
+  if (error) throw error;
+  refresh();
+}
+
 // O link só existe na resposta destas ações: o banco guarda apenas o hash do
 // token, então ele é mostrado ao dono uma única vez.
 export type EstadoInquilino = EstadoFormulario & {

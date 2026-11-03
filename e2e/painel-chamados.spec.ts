@@ -37,11 +37,26 @@ test("proprietário vê os chamados, abre o detalhe com foto e leva até resolvi
   await expect(lista.getByRole("listitem").first()).toContainText("Urgente");
   await expect(lista.getByRole("listitem").nth(1)).toContainText("Novo");
 
-  // Filtro pelo outro imóvel: nada em aberto
+  // Filtros no celular: ficam no botão "Filtrar"
+  await page.getByRole("button", { name: "Filtrar" }).click();
   await page.getByRole("combobox", { name: "Imóvel" }).selectOption({ label: "Apto Centro" });
-  await expect(page.getByText("Nenhum chamado em aberto.")).toBeVisible();
+  // (o quadro do computador fica escondido na mesma página: olha só o visível)
+  await expect(page.getByText("Nenhum chamado com esses filtros.").filter({ visible: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Abertos (0)" })).toBeVisible();
-  await page.getByRole("combobox", { name: "Imóvel" }).selectOption({ label: "Todos os imóveis" });
+  await expect(page.getByRole("button", { name: /Filtrar 1 filtro ligado/ })).toBeVisible();
+  // Busca por texto (sem acento acha com acento) e categoria
+  await page.getByRole("button", { name: "Limpar filtros" }).click();
+  await expect(page.getByRole("link", { name: "Abertos (2)" })).toBeVisible();
+  await page.getByRole("searchbox", { name: "Buscar" }).fill("pia");
+  await expect(page).toHaveURL(/busca=pia/);
+  await expect(lista.getByRole("listitem")).toHaveCount(1);
+  await expect(lista.getByRole("listitem")).toContainText("Vazamento embaixo da pia");
+  await page.getByRole("button", { name: "Limpar filtros" }).click();
+  await page.getByRole("combobox", { name: "Categoria" }).selectOption({ label: "Elétrica" });
+  await expect(lista.getByRole("listitem")).toHaveCount(1);
+  await expect(lista.getByRole("listitem")).toContainText("Tomada da sala");
+  await page.getByRole("button", { name: "Limpar filtros" }).click();
+  await expect(lista.getByRole("listitem")).toHaveCount(2);
 
   // Detalhe do urgente: dados, foto e histórico
   await lista.getByRole("listitem").first().click();

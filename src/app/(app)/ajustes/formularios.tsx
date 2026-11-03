@@ -3,12 +3,15 @@
 import { useActionState, useId } from "react";
 
 import { CampoTexto } from "@/components/campo-texto";
+import { useNotificarQuandoMudar } from "@/components/notificacoes";
 import { Button } from "@/components/ui/button";
 import type { EstadoFormulario } from "@/lib/formularios";
 
 import { salvarNome, salvarSilencio } from "./actions";
 
+// Erro fica junto do formulário; a confirmação vira notificação no computador.
 function Retorno({ estado }: { estado: EstadoFormulario }) {
+  useNotificarQuandoMudar(estado, estado.sucesso);
   if (estado.erroGeral) {
     return (
       <p role="alert" className="text-sm text-destructive">
@@ -18,7 +21,7 @@ function Retorno({ estado }: { estado: EstadoFormulario }) {
   }
   if (estado.sucesso) {
     return (
-      <p role="status" className="text-sm text-status-resolvido-foreground">
+      <p role="status" className="text-sm text-status-resolvido-foreground lg:hidden">
         {estado.sucesso}
       </p>
     );

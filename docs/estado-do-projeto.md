@@ -38,6 +38,8 @@ Tudo tem commit e está no GitHub, num repositório **privado**: https://github.
    - CEP opcional que preenche rua e bairro pelo ViaCEP (busca feita pelo navegador; o CEP não é guardado e cidade/UF aparecem só como confirmação);
    - o link do inquilino é guardado só como hash e aparece uma única vez;
    - mostra "Visto em ...", permite gerar novo link, desativar e reativar;
+   - excluir imóvel com janela de confirmação: sem chamados, exclui de vez (com os inquilinos e a foto); com chamados, arquiva (some da lista, os links dos inquilinos param e o histórico fica; dá para ver em "Arquivados" e desarquivar); com chamado em aberto, não deixa. A regra fica no banco (`excluir_ou_arquivar_imovel`), e imóvel arquivado não recebe nem reabre chamados (trigger);
+   - busca na lista de imóveis (apelido ou endereço), a partir de 4 imóveis;
    - foto opcional do imóvel (bucket privado `fotos-imoveis`, só o dono lê, envia e apaga), com troca e remoção na edição e uma imagem padrão (casa) quando não há foto.
 4. **Página do inquilino (`/c/[token]`):**
    - abre chamado com categoria, descrição, foto (reduzida no celular, sem dados de localização), urgência e melhor horário;
@@ -45,7 +47,8 @@ Tudo tem commit e está no GitHub, num repositório **privado**: https://github.
    - "Perdi meu link", com resposta sempre igual (para não revelar quais e-mails existem) e no máximo 1 reenvio a cada 10 min;
    - limite de 10 chamados por dia por inquilino.
 5. **Painel do proprietário:**
-   - no celular: lista com abas Abertos/Resolvidos e filtro por imóvel;
+   - no celular: lista com abas Abertos/Resolvidos e um botão "Filtrar";
+   - filtros na URL, no celular e no computador: busca por texto (descrição, imóvel, inquilino e categoria, sem ligar para acento), imóvel, categoria e "só urgentes";
    - detalhe do chamado com foto, mudança de status (regra no banco: `mudar_status_chamado`), recado, custo em R$ e histórico.
 6. **Avisos:**
    - Web Push para o proprietário, com horário de silêncio (21h às 8h; só urgentes avisam na hora), calculado no banco no fuso de São Paulo;
@@ -70,8 +73,9 @@ Tudo tem commit e está no GitHub, num repositório **privado**: https://github.
    - página do inquilino com barra da logo (`MolduraPublica`), formulário à esquerda e "Seus pedidos" à direita; sem pedidos, o formulário fica centralizado;
    - cadastro e edição de imóvel num painel (apelido em destaque e endereço começando pelo CEP) com a prévia ao vivo do cartão ao lado, onde se escolhe ou arrasta a foto; no celular, a prévia vem antes de salvar;
    - link inválido e avaliação ficam num cartão estreito.
+   - notificações no canto inferior direito (`ProvedorNotificacoes`), só no computador: confirmações (imóvel excluído/arquivado, status alterado no quadro e no painel, nome e horário salvos, avisos ligados/desligados) e movimentos recusados no quadro; somem sozinhas em 5 s (erro em 8 s), param com o mouse em cima e têm X. No celular cada aviso continua no próprio lugar. Ficam no lugar, também no computador: links gerados de inquilino, mensagem do CEP e erros de formulário.
 
-**Testes:** 219 unitários (Vitest), 85 do banco (pgTAP) e 35 de ponta a ponta (Playwright), sendo 29 no celular e 6 no computador (`*.pc.spec.ts`). Rode com `make test-all`.
+**Testes:** 230 unitários (Vitest), 95 do banco (pgTAP) e 39 de ponta a ponta (Playwright), sendo 31 no celular e 8 no computador (`*.pc.spec.ts`). Rode com `make test-all`.
 
 **Comandos úteis:**
 - `make dev`, `make dev-limpar` (quando o cache do Next ficar velho), `make db-start` e `make db-migrate`;
@@ -89,9 +93,7 @@ O celular está perfeito; não mexer sem pedir.
 
 ### Melhorias pedidas
 
-1. **Excluir imóvel, com janela de confirmação:** (lembrar de apagar a foto do bucket `fotos-imoveis`) decidir o que acontece com imóveis que têm chamados. A proposta anterior era excluir só os que não têm chamados e arquivar os outros, para não perder o histórico.
-2. **Filtros e busca:** na lista de imóveis e no kanban (por texto, imóvel, categoria, período...).
-3. **Dados de demonstração (seed):** proprietários, imóveis, inquilinos e chamados de exemplo, para ter volume ao apresentar. Lembrar que o login é por código no e-mail: no local o código chega no Mailpit.
+1. **Dados de demonstração (seed):** proprietários, imóveis, inquilinos e chamados de exemplo, para ter volume ao apresentar. Lembrar que o login é por código no e-mail: no local o código chega no Mailpit.
 
 ### Ainda pendente do plano original
 

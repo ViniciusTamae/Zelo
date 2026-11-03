@@ -14,6 +14,7 @@ import {
   obterChamado,
   type Aba,
 } from "@/lib/chamados/proprietario";
+import { contarFiltrosAtivos, lerFiltros, linkDosChamados } from "@/lib/chamados/filtros";
 import { COLUNAS } from "@/lib/chamados/quadro";
 import { statusVisual } from "@/lib/chamados/status";
 import { formatarReais } from "@/lib/chamados/valor";
@@ -21,7 +22,7 @@ import { formatarDataHora, tempoDesde } from "@/lib/datas";
 import { cn } from "cn";
 
 import { DetalheChamado } from "./detalhe-chamado";
-import { FiltroImovel } from "./filtro-imovel";
+import { FiltrosChamados } from "./filtros-chamados";
 import { PainelChamado } from "./painel-chamado";
 import { Quadro, type ColunaDoQuadro } from "./quadro";
 
@@ -47,16 +48,17 @@ export default function ChamadosPage({ searchParams }: PageProps<"/chamados">) {
 async function ConteudoChamados({ searchParams }: Pick<PageProps<"/chamados">, "searchParams">) {
   const parametros = await searchParams;
   const aba: Aba = parametros.aba === "resolvidos" ? "resolvidos" : "abertos";
-  const imovelId = typeof parametros.imovel === "string" && parametros.imovel ? parametros.imovel : undefined;
+  const filtros = lerFiltros(parametros);
+  const filtrando = contarFiltrosAtivos(filtros) > 0;
   const chamadoAberto = typeof parametros.chamado === "string" ? parametros.chamado : undefined;
 
   // O celular usa a lista com abas; o computador, o quadro. As duas vêm
   // juntas e o CSS mostra a certa (lg:hidden / hidden lg:block).
   const [imoveis, chamados, abertos, quadro] = await Promise.all([
     listarImoveisParaFiltro(),
-    listarChamados({ aba, imovelId }),
-    contarAbertos(imovelId),
-    listarQuadro({ imovelId }),
+    listarChamados({ aba, filtros }),
+    contarAbertos(filtros),
+    listarQuadro(filtros),
   ]);
 
   if (imoveis.length === 0) {
@@ -71,13 +73,9 @@ async function ConteudoChamados({ searchParams }: Pick<PageProps<"/chamados">, "
     );
   }
 
-  const linkDaAba = (destino: Aba) =>
-    `/chamados?aba=${destino}${imovelId ? `&imovel=${imovelId}` : ""}`;
-  // Quadro: abrir um chamado no painel mantém o filtro de imóvel.
-  const linkDoQuadro = (chamado?: string) => {
-    const busca = new URLSearchParams({ ...(imovelId ? { imovel: imovelId } : {}), ...(chamado ? { chamado } : {}) });
-    return busca.size > 0 ? `/chamados?${busca}` : "/chamados";
-  };
+  // Trocar de aba ou abrir um chamado no painel mantém os filtros.
+  const linkDaAba = (destino: Aba) => linkDosChamados(filtros, { aba: destino });
+  const linkDoQuadro = (chamado?: string) => linkDosChamados(filtros, { chamado });
 
   const agora = new Date();
   const colunas: ColunaDoQuadro[] = COLUNAS.map(({ status, titulo }) => ({
@@ -102,14 +100,16 @@ async function ConteudoChamados({ searchParams }: Pick<PageProps<"/chamados">, "
 
   return (
     <>
-      {imoveis.length > 1 && (
-        <div className="lg:col-start-2 lg:row-start-1 lg:w-64">
-          <FiltroImovel aba={aba} imovelId={imovelId} imoveis={imoveis} />
-        </div>
-      )}
+      <div className="lg:col-start-2 lg:row-start-1">
+        <FiltrosChamados filtros={filtros} imoveis={imoveis} extras={{ aba: aba === "resolvidos" ? aba : undefined }} />
+      </div>
 
       <div className="hidden lg:col-span-2 lg:block">
-        <Quadro colunas={colunas} selecionado={chamadoAberto} />
+        <Quadro
+          colunas={colunas}
+          selecionado={chamadoAberto}
+          resumoDosFiltros={filtrando ? resumoDoQuadro(colunas.reduce((total, { cartoes }) => total + cartoes.length, 0)) : undefined}
+        />
         {chamadoAberto && (
           <Suspense>
             <PainelDoQuadro id={chamadoAberto} fecharHref={linkDoQuadro()} />
@@ -141,9 +141,11 @@ async function ConteudoChamados({ searchParams }: Pick<PageProps<"/chamados">, "
 
         {chamados.length === 0 ? (
           <p className="text-muted-foreground">
-            {aba === "abertos"
-              ? "Nenhum chamado em aberto. Quando um inquilino pedir um conserto, ele aparece aqui."
-              : "Nenhum chamado resolvido ainda."}
+            {filtrando
+              ? "Nenhum chamado com esses filtros."
+              : aba === "abertos"
+                ? "Nenhum chamado em aberto. Quando um inquilino pedir um conserto, ele aparece aqui."
+                : "Nenhum chamado resolvido ainda."}
           </p>
         ) : (
           <ul className="flex flex-col gap-3" aria-label="Lista de chamados">
@@ -178,6 +180,11 @@ async function ConteudoChamados({ searchParams }: Pick<PageProps<"/chamados">, "
       </div>
     </>
   );
+}
+
+function resumoDoQuadro(total: number) {
+  if (total === 0) return "Nenhum chamado com esses filtros.";
+  return total === 1 ? "1 chamado com esses filtros." : `${total} chamados com esses filtros.`;
 }
 
 async function PainelDoQuadro({ id, fecharHref }: { id: string; fecharHref: string }) {

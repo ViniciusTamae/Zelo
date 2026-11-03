@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import {
+  abrirChamado,
   adicionarInquilino,
   cadastrarImovel,
   campo,
@@ -65,7 +66,7 @@ test("cadastro de imóvel e inquilinos com link exclusivo", async ({ page }) => 
     numero: "10",
     bairro: "Centro",
   });
-  await expect(page.getByText("Rua A, 10 - Centro")).toBeVisible();
+  await expect(page.getByText("Rua A, 10 - Centro").filter({ visible: true })).toBeVisible();
   await expect(page.getByText("Nenhum inquilino ainda.")).toBeVisible();
 
   // Edição: muda o apelido e inclui complemento; os campos vêm preenchidos
@@ -77,7 +78,7 @@ test("cadastro de imóvel e inquilinos com link exclusivo", async ({ page }) => 
   await campo(page, "Complemento (opcional)").fill("Fundos");
   await page.getByRole("button", { name: "Salvar" }).click();
   await expect(page.getByRole("heading", { name: "Casa Azul" })).toBeVisible();
-  await expect(page.getByText("Rua A, 10 - Fundos - Centro")).toBeVisible();
+  await expect(page.getByText("Rua A, 10 - Fundos - Centro").filter({ visible: true })).toBeVisible();
 
   // Inquilino com e-mail inválido é recusado
   await campo(page, "Nome").fill("Maria");
@@ -254,9 +255,102 @@ test("CEP preenche rua e bairro; CEP inexistente ou serviço fora do ar avisam",
   const previa = page.locator("form").filter({ visible: true });
   await expect(previa.getByText("Casa da Sé", { exact: true })).toBeVisible();
   await expect(previa.getByText("Praça da Sé, 100 - Sé", { exact: true })).toBeVisible();
+  // (o Next mantém a tela anterior montada e escondida: olha só o que está à vista)
   await page.getByRole("button", { name: "Salvar imóvel" }).click();
   await expect(page.getByRole("heading", { name: "Casa da Sé" })).toBeVisible();
-  await expect(page.getByText("Praça da Sé, 100 - Sé")).toBeVisible();
+  await expect(page.getByText("Praça da Sé, 100 - Sé").filter({ visible: true })).toBeVisible();
+});
+
+test("excluir imóvel: sem chamados exclui; com chamado em aberto não deixa; com histórico arquiva", async ({
+  page,
+  browser,
+}) => {
+  test.slow();
+  await entrar(page, emailDeTeste("excluir-imovel"));
+  const dialogo = () => page.getByRole("dialog");
+
+  // Sem chamados: exclui de vez
+  await cadastrarImovel(page, "Kitnet", { rua: "Rua K", numero: "5", bairro: "Centro" });
+  await page.getByRole("button", { name: "Excluir imóvel" }).click();
+  await expect(dialogo()).toHaveAccessibleName("Excluir Kitnet?");
+  // Cancelar não faz nada
+  await dialogo().getByRole("button", { name: "Cancelar" }).click();
+  await expect(dialogo()).toBeHidden();
+  await page.getByRole("button", { name: "Excluir imóvel" }).click();
+  await dialogo().getByRole("button", { name: "Excluir imóvel" }).click();
+  // O aviso aparece e sai da URL (recarregar não repete)
+  await expect(page.getByRole("status").filter({ hasText: "Imóvel excluído." })).toBeVisible();
+  await expect(page).toHaveURL(/\/imoveis$/);
+  await expect(page.getByText("Você ainda não cadastrou imóveis.")).toBeVisible();
+
+  // Com chamado em aberto: não deixa e aponta para os chamados
+  await cadastrarImovel(page, "Casa A", { rua: "Rua A", numero: "1", bairro: "Centro" });
+  const imovelId = page.url().split("/").pop()!;
+  const link = await adicionarInquilino(page, "Maria");
+  const inquilina = await (await browser.newContext()).newPage();
+  await inquilina.goto(link);
+  await abrirChamado(inquilina, { categoria: "Outros", descricao: "Porta emperrada" });
+  await page.reload();
+  await page.getByRole("button", { name: "Excluir imóvel" }).click();
+  await expect(dialogo()).toHaveAccessibleName("Ainda não dá para excluir");
+  await expect(dialogo()).toContainText("1 chamado em aberto");
+  await expect(dialogo().getByRole("link", { name: "Ver chamados do imóvel" })).toBeVisible();
+  await dialogo().getByRole("button", { name: "Fechar" }).click();
+
+  // Com o chamado resolvido: arquiva (o histórico fica)
+  const { error } = await clienteAdmin().from("chamados").update({ status: "resolvido" }).eq("imovel_id", imovelId);
+  expect(error).toBeNull();
+  await page.reload();
+  await expect(page.getByText("Com chamados no histórico, o imóvel é arquivado em vez de apagado.")).toBeVisible();
+  await page.getByRole("button", { name: "Excluir imóvel" }).click();
+  await expect(dialogo()).toHaveAccessibleName("Arquivar Casa A?");
+  await dialogo().getByRole("button", { name: "Arquivar imóvel" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Imóvel arquivado. Ele continua em Arquivados" })).toBeVisible();
+  await expect(page).toHaveURL(/\/imoveis$/);
+  await expect(page.getByRole("main").getByRole("link", { name: /Casa A/ })).toHaveCount(0);
+
+  // O link da inquilina para de funcionar
+  await inquilina.reload();
+  await expect(inquilina.getByText("Este link não funciona mais")).toBeVisible();
+
+  // Arquivados: o imóvel com o aviso e sem as ações de inquilino
+  await page.getByRole("link", { name: "Ver arquivados (1)" }).click();
+  await expect(page.getByRole("heading", { name: "Imóveis arquivados" })).toBeVisible();
+  await page.getByRole("main").getByRole("link", { name: /Casa A/ }).click();
+  await expect(page.getByText(/^Arquivado em/)).toBeVisible();
+  await expect(page.getByLabel("Adicionar inquilino", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Excluir imóvel" })).toHaveCount(0);
+
+  // Desarquivar: volta para a lista e o link volta a funcionar
+  await page.getByRole("button", { name: "Desarquivar" }).click();
+  await expect(page.getByText(/^Arquivado em/)).toBeHidden();
+  await expect(page.getByRole("button", { name: "Excluir imóvel" })).toBeVisible();
+  await inquilina.reload();
+  await expect(inquilina.getByRole("heading", { name: "Olá, Maria!" })).toBeVisible();
+});
+
+test("busca na lista de imóveis", async ({ page }) => {
+  test.slow();
+  await entrar(page, emailDeTeste("busca-imoveis"));
+  for (const [apelido, rua] of [["Apto Centro", "Av. Brasil"], ["Casa da Praia", "Rua do Mar"], ["Kitnet", "Rua Sete"], ["Sobrado", "Rua das Acácias"]]) {
+    await cadastrarImovel(page, apelido, { rua, numero: "1", bairro: "Centro" });
+  }
+  await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Imóveis" }).click();
+  const cartoes = page.getByRole("main").getByRole("listitem");
+  await expect(cartoes).toHaveCount(4);
+
+  // Pelo apelido e pelo endereço, sem ligar para acento
+  const busca = page.getByRole("searchbox", { name: "Buscar imóvel" });
+  await busca.fill("praia");
+  await expect(cartoes).toHaveCount(1);
+  await expect(cartoes).toContainText("Casa da Praia");
+  await busca.fill("acacias");
+  await expect(cartoes).toHaveCount(1);
+  await expect(cartoes).toContainText("Sobrado");
+  await busca.fill("garagem");
+  await expect(page.getByText('Nenhum imóvel com "garagem".')).toBeVisible();
+  await busca.fill("");
+  await expect(cartoes).toHaveCount(4);
 });
 
 test("um proprietário não abre o imóvel de outro", async ({ browser }) => {

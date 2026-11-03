@@ -133,6 +133,8 @@ test("quadro: arrastar muda o status, com as mesmas regras e o custo ao resolver
   await arrastar(page, cartao(page, "Novos", "Cano estourado"), coluna(page, "Em andamento"));
   await expect(cartao(page, "Em andamento", "Cano estourado")).toContainText("Urgente");
   await expect(cartao(page, "Em andamento", "Cano estourado")).toContainText("Em andamento");
+  // Espera o servidor confirmar antes de recarregar (a tela se adianta ao servidor)
+  await expect(page.getByLabel("Notificações").getByText("Hidráulica · Casa da Rua A: Atendimento iniciado.")).toBeVisible();
   await page.reload();
   await expect(cartao(page, "Em andamento", "Cano estourado")).toContainText("Urgente");
   await arrastar(page, cartao(page, "Em andamento", "Cano estourado"), coluna(page, "Resolvidos"));
@@ -142,7 +144,48 @@ test("quadro: arrastar muda o status, com as mesmas regras e o custo ao resolver
   await expect(cartao(page, "Resolvidos", "Cano estourado")).not.toContainText("Urgente");
 });
 
-test("quadro: título e filtro na mesma linha e colunas da mesma altura", async ({ page }) => {
+test("quadro: filtros por texto, categoria e só urgentes, guardados na URL", async ({ page, browser }) => {
+  test.slow();
+  await prepararQuadro(page, browser);
+  const total = () => page.getByRole("region").getByRole("listitem");
+
+  // Busca: sem acento acha com acento; procura também no inquilino
+  await page.getByRole("searchbox", { name: "Buscar" }).fill("eletrica");
+  await expect(page).toHaveURL(/busca=eletrica/);
+  await expect(total()).toHaveCount(1);
+  await expect(cartao(page, "Novos", "Tomada da sala")).toBeVisible();
+  await expect(page.getByText("1 chamado com esses filtros.").filter({ visible: true })).toBeVisible();
+  await page.getByRole("searchbox", { name: "Buscar" }).fill("maria");
+  await expect(total()).toHaveCount(3);
+
+  // Só urgentes, somado à busca
+  await page.getByRole("checkbox", { name: "Só urgentes" }).check();
+  await expect(total()).toHaveCount(1);
+  await expect(cartao(page, "Novos", "Cano estourado")).toBeVisible();
+
+  // Os filtros ficam na URL: recarregar mantém
+  await page.reload();
+  await expect(page.getByRole("checkbox", { name: "Só urgentes" })).toBeChecked();
+  await expect(page.getByRole("searchbox", { name: "Buscar" })).toHaveValue("maria");
+  await expect(total()).toHaveCount(1);
+
+  // Abrir um chamado no painel e fechar mantém os filtros
+  await cartao(page, "Novos", "Cano estourado").click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page).toHaveURL(/urgentes=1/);
+
+  // Categoria sem resultado e limpar
+  await page.getByRole("checkbox", { name: "Só urgentes" }).uncheck();
+  await page.getByRole("combobox", { name: "Categoria" }).selectOption({ label: "Telhado" });
+  await expect(page.getByText("Nenhum chamado com esses filtros.").filter({ visible: true })).toBeVisible();
+  await page.getByRole("button", { name: "Limpar filtros" }).click();
+  await expect(page).toHaveURL(/\/chamados$/);
+  await expect(page.getByRole("searchbox", { name: "Buscar" })).toHaveValue("");
+  await expect(total()).toHaveCount(3);
+});
+
+test("quadro: título e filtros na mesma linha e colunas da mesma altura", async ({ page }) => {
   await entrar(page, emailDeTeste("dono-topo"));
   await cadastrarImovel(page, "Casa A", { rua: "Rua A", numero: "1", bairro: "Centro" });
   await cadastrarImovel(page, "Casa B", { rua: "Rua B", numero: "2", bairro: "Centro" });
@@ -198,6 +241,37 @@ test("ajustes: cartões em pares no computador", async ({ page }) => {
   expect(silencio.x).toBeGreaterThan(avisos.x + avisos.width);
   expect(aparencia.y).toBe(dados.y);
   expect(dados.y).toBeGreaterThan(avisos.y + avisos.height);
+});
+
+test("notificações no canto inferior direito: confirmações de Ajustes e de imóvel excluído", async ({ page }) => {
+  await entrar(page, emailDeTeste("dono-notificacoes"));
+  const notificacoes = page.getByLabel("Notificações");
+
+  // Salvar o nome: a confirmação aparece no canto, não dentro do cartão
+  await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Ajustes" }).click();
+  const conta = page.getByLabel("Sua conta");
+  await conta.getByRole("textbox", { name: "Nome", exact: true }).fill("Ana Souza");
+  await conta.getByRole("button", { name: "Salvar nome" }).click();
+  const aviso = notificacoes.getByText("Nome salvo.");
+  await expect(aviso).toBeVisible();
+  await expect(conta.getByRole("status")).toBeHidden();
+  const caixa = (await aviso.boundingBox())!;
+  const tela = page.viewportSize()!;
+  expect(caixa.x).toBeGreaterThan(tela.width / 2);
+  expect(caixa.y).toBeGreaterThan(tela.height / 2);
+  // O X fecha
+  await notificacoes.getByRole("button", { name: "Fechar notificação" }).click();
+  await expect(aviso).toBeHidden();
+
+  // Imóvel excluído: notificação, e a URL perde o ?aviso (recarregar não repete)
+  await cadastrarImovel(page, "Kitnet", { rua: "Rua K", numero: "5", bairro: "Centro" });
+  await page.getByRole("button", { name: "Excluir imóvel" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Excluir imóvel" }).click();
+  await expect(notificacoes.getByText("Imóvel excluído.")).toBeVisible();
+  await expect(page).toHaveURL(/\/imoveis$/);
+  await expect(page.getByRole("main").getByText("Imóvel excluído.")).toBeHidden();
+  // Some sozinha
+  await expect(notificacoes.getByText("Imóvel excluído.")).toBeHidden({ timeout: 8000 });
 });
 
 test("imóveis: grade no computador e, no imóvel, inquilinos ao lado do cadastro", async ({ page }) => {

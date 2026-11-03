@@ -20,6 +20,7 @@ import Link from "next/link";
 import { useOptimistic, useState, useSyncExternalStore, useTransition } from "react";
 import { cn } from "cn";
 
+import { useNotificar } from "@/components/notificacoes";
 import { StatusBadge } from "@/components/status-badge";
 import type { StatusVisual } from "@/lib/chamados/status";
 import { transicaoPermitida, type StatusChamado } from "@/lib/chamados/transicoes";
@@ -116,10 +117,21 @@ function useNoNavegador() {
 
 // Quadro de chamados do computador: uma coluna por status. Arrastar um cartão
 // para outra coluna muda o status (mesmas regras dos botões do detalhe).
-export function Quadro({ colunas, selecionado }: { colunas: ColunaDoQuadro[]; selecionado?: string }) {
+export function Quadro({
+  colunas,
+  selecionado,
+  resumoDosFiltros,
+}: {
+  colunas: ColunaDoQuadro[];
+  selecionado?: string;
+  // Com filtros ligados, a linha da dica diz quantos chamados aparecem.
+  resumoDosFiltros?: string;
+}) {
   const [exibidas, moverOtimista] = useOptimistic(colunas, moverCartao);
   const [, iniciarTransicao] = useTransition();
-  const [aviso, setAviso] = useState<{ texto: string; erro?: boolean } | null>(null);
+  // Confirmações e movimentos recusados aparecem como notificação no canto.
+  const notificar = useNotificar();
+  const setAviso = (aviso: { texto: string; erro?: boolean }) => notificar(aviso.texto, { erro: aviso.erro });
   const [aResolver, setAResolver] = useState<CartaoDoQuadro | null>(null);
   const pronto = useNoNavegador();
 
@@ -188,21 +200,14 @@ export function Quadro({ colunas, selecionado }: { colunas: ColunaDoQuadro[]; se
 
   return (
     <div className="flex flex-col gap-3" data-pronto={pronto || undefined}>
-      {/* Uma linha só: a dica dá lugar ao aviso, sem empurrar o quadro. */}
-      <div className="min-h-5 text-sm">
-        {!aviso && <p className="text-muted-foreground">Arraste para mudar o status. Clique para ver o detalhe.</p>}
-        <div aria-live="polite">
-          {aviso && (
-            <p className={aviso.erro ? "text-destructive" : "text-status-resolvido-foreground"}>{aviso.texto}</p>
-          )}
-        </div>
-      </div>
+      <p className="min-h-5 text-sm text-muted-foreground">
+        {resumoDosFiltros ?? "Arraste para mudar o status. Clique para ver o detalhe."}
+      </p>
 
       <DndContext
         id="quadro-de-chamados"
         sensors={sensores}
         collisionDetection={detectarColuna}
-        onDragStart={() => setAviso(null)}
         onDragEnd={aoSoltar}
         onDragCancel={ignorarProximoClique}
         accessibility={{

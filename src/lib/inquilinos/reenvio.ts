@@ -12,20 +12,21 @@ import { gerarToken } from "./token";
 export const ESPERA_REENVIO_MINUTOS = 10;
 
 // "Perdi meu link": gera um link novo para cada inquilino ativo com esse e-mail
+// (fora os de imóveis arquivados, cujo link não funciona mais)
 // e manda por e-mail. Não devolve nada: a tela responde sempre igual, para não
 // revelar quais e-mails estão cadastrados.
 export async function reenviarLinkPorEmail(email: string, agora = new Date()) {
   const supabase = createAdminClient();
   const { data: inquilinos, error } = await supabase
     .from("inquilinos")
-    .select("id, nome, imoveis(apelido)")
+    .select("id, nome, imoveis(apelido, arquivado_em)")
     .eq("email", email)
     .eq("ativo", true);
   if (error) throw error;
 
   const limite = new Date(agora.getTime() - ESPERA_REENVIO_MINUTOS * 60_000).toISOString();
 
-  for (const inquilino of inquilinos) {
+  for (const inquilino of inquilinos.filter(({ imoveis }) => !imoveis.arquivado_em)) {
     const { token, hash } = gerarToken();
     // Só troca se não houve reenvio recente (a condição fica no próprio update,
     // então dois pedidos ao mesmo tempo não geram dois links).

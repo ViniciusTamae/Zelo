@@ -2,16 +2,59 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { NotificarAoAbrir } from "@/components/notificacoes";
 import { buttonVariants } from "@/components/ui/button";
-import { FotoImovel } from "@/components/foto-imovel";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { listarImoveis } from "@/lib/imoveis/dados";
+import { contarArquivados, listarImoveis } from "@/lib/imoveis/dados";
+
+import { ListaImoveis } from "./lista-imoveis";
 
 export const metadata: Metadata = {
   title: "Imóveis | Zelo",
 };
 
-export default function ImoveisPage() {
+const AVISOS: Record<string, string> = {
+  excluido: "Imóvel excluído.",
+  arquivado: "Imóvel arquivado. Ele continua em Arquivados, com o histórico dos chamados.",
+};
+
+// Lista de imóveis; com ?arquivados=1, os arquivados.
+export default function ImoveisPage({ searchParams }: PageProps<"/imoveis">) {
+  return (
+    // Os dados (e a URL) são lidos na requisição: ficam atrás do Suspense.
+    <Suspense fallback={<p className="text-muted-foreground">Carregando...</p>}>
+      <ConteudoImoveis searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function ConteudoImoveis({ searchParams }: Pick<PageProps<"/imoveis">, "searchParams">) {
+  const parametros = await searchParams;
+  const arquivados = parametros.arquivados === "1";
+  const aviso = typeof parametros.aviso === "string" ? AVISOS[parametros.aviso] : undefined;
+  const [imoveis, totalArquivados] = await Promise.all([listarImoveis({ arquivados }), contarArquivados()]);
+
+  if (arquivados) {
+    return (
+      <>
+        <Link href="/imoveis" className="text-sm text-muted-foreground">
+          ← Seus imóveis
+        </Link>
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-semibold">Imóveis arquivados</h1>
+          <p className="text-muted-foreground">
+            Os links dos inquilinos não funcionam e o histórico dos chamados continua guardado. Abra um imóvel para
+            desarquivar.
+          </p>
+        </div>
+        {imoveis.length === 0 ? (
+          <p className="text-muted-foreground">Nenhum imóvel arquivado.</p>
+        ) : (
+          <ListaImoveis imoveis={imoveis} />
+        )}
+      </>
+    );
+  }
+
   return (
     <>
       <div className="flex items-center justify-between gap-4">
@@ -21,55 +64,31 @@ export default function ImoveisPage() {
         </Link>
       </div>
 
-      {/* Os dados são lidos na requisição: ficam atrás do Suspense. */}
-      <Suspense fallback={<p className="text-muted-foreground">Carregando...</p>}>
-        <ListaImoveis />
-      </Suspense>
+      {/* Computador: notificação no canto; celular: faixa no topo da lista. */}
+      {aviso && (
+        <>
+          <NotificarAoAbrir texto={aviso} parametro="aviso" />
+          <p role="status" className="rounded-lg bg-secondary px-4 py-3 text-sm text-secondary-foreground lg:hidden">
+            {aviso}
+          </p>
+        </>
+      )}
+
+      {imoveis.length === 0 ? (
+        <p className="text-muted-foreground">
+          {totalArquivados > 0
+            ? "Nenhum imóvel ativo. Cadastre um pelo botão \"Novo imóvel\" ou desarquive um dos arquivados."
+            : "Você ainda não cadastrou imóveis. Comece pelo botão \"Novo imóvel\"."}
+        </p>
+      ) : (
+        <ListaImoveis imoveis={imoveis} />
+      )}
+
+      {totalArquivados > 0 && (
+        <Link href="/imoveis?arquivados=1" className="self-start text-sm text-muted-foreground underline">
+          Ver arquivados ({totalArquivados})
+        </Link>
+      )}
     </>
-  );
-}
-
-async function ListaImoveis() {
-  const imoveis = await listarImoveis();
-
-  if (imoveis.length === 0) {
-    return (
-      <p className="text-muted-foreground">
-        Você ainda não cadastrou imóveis. Comece pelo botão &quot;Novo imóvel&quot;.
-      </p>
-    );
-  }
-
-  return (
-    // No computador, cartões em grade (3 por linha) com a foto em cima; no
-    // celular, lista com a foto pequena à esquerda.
-    <ul className="flex flex-col gap-3 lg:grid lg:grid-cols-3">
-      {imoveis.map((imovel) => (
-        <li key={imovel.id}>
-          <Link href={`/imoveis/${imovel.id}`} className="block h-full">
-            <Card className="h-full flex-row items-center gap-0 pl-4 transition-colors hover:bg-muted/50 lg:flex-col lg:items-stretch lg:pt-0 lg:pl-0">
-              {/* Envolvida: o Card trata <img> como primeiro filho de outro jeito
-                  (tira o espaço de cima), o que desalinharia foto e imagem padrão. */}
-              <div className="shrink-0 lg:w-full">
-                <FotoImovel
-                  url={imovel.fotoUrl}
-                  apelido={imovel.apelido}
-                  className="size-16 rounded-lg lg:aspect-video lg:size-auto lg:w-full lg:rounded-none"
-                />
-              </div>
-              <CardHeader className="flex-1 lg:pt-4">
-                <CardTitle>{imovel.apelido}</CardTitle>
-                <CardDescription>{imovel.endereco}</CardDescription>
-                <CardDescription>
-                  {imovel.inquilinosAtivos === 1
-                    ? "1 inquilino"
-                    : `${imovel.inquilinosAtivos} inquilinos`}
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          </Link>
-        </li>
-      ))}
-    </ul>
   );
 }
