@@ -7,10 +7,16 @@ import {
   entrar,
   LINK_INQUILINO,
 } from "./ajudantes";
+import { clienteAdmin } from "./admin";
 import { emailDeTeste } from "./mailpit";
 
 function rotuloVisivel(page: Page, texto: string) {
   return page.locator("label").filter({ hasText: texto, visible: true });
+}
+
+// O Next mantém a tela anterior montada (escondida): pega o campo do formulário visível.
+function campoFoto(page: Page) {
+  return page.locator("form").filter({ visible: true }).locator('input[name="foto"]');
 }
 
 function cartaoDoInquilino(page: Page, nome: string) {
@@ -125,6 +131,132 @@ test("cadastro de imóvel e inquilinos com link exclusivo", async ({ page }) => 
   const cartaoImovel = page.getByRole("link", { name: /Casa Azul/ });
   await expect(cartaoImovel).toContainText("Rua A, 10 - Fundos - Centro");
   await expect(cartaoImovel).toContainText("2 inquilinos");
+});
+
+test("foto do imóvel: cadastrar, trocar e remover; sem foto, a imagem padrão", async ({ page }) => {
+  test.slow();
+  await entrar(page, emailDeTeste("foto-imovel"));
+  // Sem foto: imagem padrão na lista e na página do imóvel
+  await cadastrarImovel(page, "Kitnet", { rua: "Rua K", numero: "5", bairro: "Centro" });
+  await expect(page.locator("main [data-sem-foto]").filter({ visible: true })).toHaveCount(1);
+
+  // Com foto: escolhe no cadastro e vê a prévia antes de salvar
+  await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Imóveis" }).click();
+  await page.getByRole("link", { name: "Novo imóvel" }).click();
+  await campo(page, "Apelido").fill("Casa com foto");
+  await campo(page, "Rua").fill("Rua A");
+  await campo(page, "Número").fill("1");
+  await campo(page, "Bairro").fill("Centro");
+  await campoFoto(page).setInputFiles("e2e/fixtures/vazamento.jpg");
+  await expect(page.getByRole("img", { name: "Prévia da foto escolhida" })).toBeVisible();
+  await page.getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByRole("heading", { name: "Casa com foto" })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Foto de Casa com foto" })).toBeVisible();
+  const imovelId = page.url().split("/").pop()!;
+
+  // Lista: a foto de um e a imagem padrão do outro
+  await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Imóveis" }).click();
+  const lista = page.getByRole("main").getByRole("list");
+  await expect(lista.getByRole("img", { name: "Foto de Casa com foto" })).toBeVisible();
+  await expect(lista.locator("[data-sem-foto]")).toHaveCount(1);
+
+  // Trocar: a foto nova substitui a antiga (só um arquivo fica guardado)
+  const fotos = () => clienteAdmin().storage.from("fotos-imoveis").list(imovelId);
+  const primeira = (await fotos()).data!.map((arquivo) => arquivo.name);
+  expect(primeira).toHaveLength(1);
+  await lista.getByRole("link", { name: /Casa com foto/ }).click();
+  await page.getByRole("link", { name: "Editar" }).click();
+  await expect(page.getByRole("img", { name: "Foto atual de Casa com foto" })).toBeVisible();
+  await campoFoto(page).setInputFiles("e2e/fixtures/vazamento.jpg");
+  await expect(page.getByRole("img", { name: "Prévia da foto escolhida" })).toBeVisible();
+  await page.getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByRole("img", { name: "Foto de Casa com foto" })).toBeVisible();
+  await expect.poll(async () => (await fotos()).data!.map((arquivo) => arquivo.name)).toEqual([
+    expect.not.stringMatching(primeira[0]),
+  ]);
+
+  // Remover: volta para a imagem padrão e o arquivo é apagado
+  await page.getByRole("link", { name: "Editar" }).click();
+  await page.getByRole("button", { name: "Remover foto" }).click();
+  await expect(page.getByRole("img", { name: "Foto atual de Casa com foto" })).toBeHidden();
+  await page.getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByRole("heading", { name: "Casa com foto" })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Foto de Casa com foto" })).toHaveCount(0);
+  await expect(page.locator("main [data-sem-foto]").filter({ visible: true })).toHaveCount(1);
+  await expect.poll(async () => (await fotos()).data!.length).toBe(0);
+});
+
+test("foto do imóvel: arquivo que não é imagem é recusado", async ({ page }) => {
+  await entrar(page, emailDeTeste("foto-imovel-ruim"));
+  await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Imóveis" }).click();
+  await page.getByRole("link", { name: "Novo imóvel" }).click();
+  await campo(page, "Apelido").fill("Casa");
+  await campo(page, "Rua").fill("Rua A");
+  await campo(page, "Número").fill("1");
+  await campo(page, "Bairro").fill("Centro");
+  await campoFoto(page).setInputFiles({
+    name: "foto.jpg",
+    mimeType: "image/jpeg",
+    buffer: Buffer.from("isto não é uma foto"),
+  });
+  await page.getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByText("Formato de foto não aceito. Use uma foto JPG, PNG ou WebP.")).toBeVisible();
+  // Nada foi cadastrado
+  await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Imóveis" }).click();
+  await expect(page.getByText("Você ainda não cadastrou imóveis.")).toBeVisible();
+});
+
+test("CEP preenche rua e bairro; CEP inexistente ou serviço fora do ar avisam", async ({ page }) => {
+  // O ViaCEP é simulado: o teste não depende da internet nem do serviço.
+  const respostas: Record<string, { status?: number; json: unknown }> = {
+    "01001000": { json: { logradouro: "Praça da Sé", bairro: "Sé", localidade: "São Paulo", uf: "SP" } },
+    "99999999": { json: { erro: "true" } },
+    "11111111": { status: 503, json: {} },
+  };
+  const buscados: string[] = [];
+  await page.route("https://viacep.com.br/ws/**", async (rota) => {
+    const cep = rota.request().url().match(/ws\/(\d{8})\//)![1];
+    buscados.push(cep);
+    const { status = 200, json } = respostas[cep];
+    await rota.fulfill({ status, json, headers: { "access-control-allow-origin": "*" } });
+  });
+
+  await entrar(page, emailDeTeste("cep"));
+  await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Imóveis" }).click();
+  await page.getByRole("link", { name: "Novo imóvel" }).click();
+  const cep = campo(page, "CEP (opcional)");
+  const aviso = page.getByRole("status").filter({ visible: true });
+
+  // Inexistente: avisa e não mexe em nada
+  await cep.fill("99999-999");
+  await expect(aviso).toHaveText("CEP não encontrado. Confira os números ou preencha o endereço à mão.");
+  await expect(campo(page, "Rua")).toHaveValue("");
+
+  // Serviço fora do ar: avisa para preencher à mão
+  await cep.fill("11111111");
+  await expect(aviso).toHaveText("Não deu para buscar o CEP agora. Preencha o endereço à mão.");
+
+  // Encontrado: máscara, rua e bairro preenchidos e o cursor no número
+  await cep.fill("");
+  await cep.pressSequentially("01001000");
+  await expect(cep).toHaveValue("01001-000");
+  await expect(campo(page, "Rua")).toHaveValue("Praça da Sé");
+  await expect(campo(page, "Bairro")).toHaveValue("Sé");
+  await expect(aviso).toHaveText("Endereço encontrado em São Paulo/SP. Confira e informe o número.");
+  await expect(campo(page, "Número")).toBeFocused();
+  // CEP incompleto não busca
+  expect(buscados).toEqual(["99999999", "11111111", "01001000"]);
+
+  // Salva normalmente (o CEP só ajudou a preencher)
+  await campo(page, "Apelido").fill("Casa da Sé");
+  await campo(page, "Número").fill("100");
+  // A prévia do cartão acompanha o que foi digitado
+  const previa = page.locator("form").filter({ visible: true });
+  await expect(previa.getByText("Casa da Sé", { exact: true })).toBeVisible();
+  await expect(previa.getByText("Praça da Sé, 100 - Sé", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Salvar imóvel" }).click();
+  await expect(page.getByRole("heading", { name: "Casa da Sé" })).toBeVisible();
+  await expect(page.getByText("Praça da Sé, 100 - Sé")).toBeVisible();
 });
 
 test("um proprietário não abre o imóvel de outro", async ({ browser }) => {

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { clienteAdmin } from "./admin";
+import { clienteAdmin, idDoUsuario } from "./admin";
 import { abrirChamado, adicionarInquilino, cadastrarImovel, entrar } from "./ajudantes";
 import { emailDeTeste } from "./mailpit";
 
@@ -25,7 +25,8 @@ for (const modo of ["light", "dark"] as const) {
       await page.screenshot({ path: `${pasta}-1-entrar.png` });
 
       // Chamados nos quatro status (para todos os StatusBadge aparecerem)
-      await entrar(page, emailDeTeste(`tema-${modo}`), "Ana Souza");
+      const email = emailDeTeste(`tema-${modo}`);
+      await entrar(page, email, "Ana Souza");
       await cadastrarImovel(page, "Casa da Rua A", { rua: "Rua A", numero: "10", bairro: "Centro" });
       const link = await adicionarInquilino(page, "Maria");
       const inquilina = await (await browser.newContext({ colorScheme: modo })).newPage();
@@ -39,8 +40,17 @@ for (const modo of ["light", "dark"] as const) {
         await abrirChamado(inquilina, { categoria, descricao, urgente });
       }
       const supabase = clienteAdmin();
-      await supabase.from("chamados").update({ status: "em_andamento" }).eq("descricao", "Tomada da sala sem energia");
-      await supabase.from("chamados").update({ status: "resolvido" }).eq("descricao", "Goteira no quarto");
+      // A chave admin enxerga tudo: filtra pelo imóvel deste teste para não
+      // mexer nos chamados de outros testes que rodam ao mesmo tempo.
+      const { data: imovel } = await supabase
+        .from("imoveis")
+        .select("id")
+        .eq("dono_id", await idDoUsuario(email))
+        .single();
+      const chamadosDoTeste = (status: "em_andamento" | "resolvido", descricao: string) =>
+        supabase.from("chamados").update({ status }).eq("imovel_id", imovel!.id).eq("descricao", descricao);
+      await chamadosDoTeste("em_andamento", "Tomada da sala sem energia");
+      await chamadosDoTeste("resolvido", "Goteira no quarto");
 
       await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Chamados" }).click();
       await expect(page.getByRole("link", { name: "Abertos (3)" })).toBeVisible();

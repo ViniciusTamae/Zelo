@@ -51,6 +51,10 @@ test("quadro: colunas por status, urgente no topo e painel lateral do detalhe", 
   await expect(coluna(page, "Em andamento")).toContainText("Nenhum chamado");
   await expect(coluna(page, "Novos").getByRole("listitem").first()).toContainText("Hidráulica · Casa da Rua A");
   await expect(coluna(page, "Novos").getByRole("listitem").first()).toContainText("Urgente");
+  // Etiquetas: o status sempre e, no urgente, também "Urgente"
+  await expect(coluna(page, "Novos").getByRole("listitem").first()).toContainText("Novo");
+  await expect(coluna(page, "Novos").getByRole("listitem").nth(1)).toContainText("Novo");
+  await expect(coluna(page, "Novos").getByRole("listitem").nth(1)).not.toContainText("Urgente");
 
   // Clique abre o painel com o detalhe (e a foto); Esc fecha
   await cartao(page, "Novos", "Cano estourado").click();
@@ -124,6 +128,76 @@ test("quadro: arrastar muda o status, com as mesmas regras e o custo ao resolver
   await page.keyboard.press("Space");
   await expect(anuncio).toContainText("Chamado solto na coluna Em andamento.");
   await expect(cartao(page, "Em andamento", "Porta emperrada")).toBeVisible();
+
+  // Urgente em andamento continua marcado (ainda é prioridade); ao resolver, sai
+  await arrastar(page, cartao(page, "Novos", "Cano estourado"), coluna(page, "Em andamento"));
+  await expect(cartao(page, "Em andamento", "Cano estourado")).toContainText("Urgente");
+  await expect(cartao(page, "Em andamento", "Cano estourado")).toContainText("Em andamento");
+  await page.reload();
+  await expect(cartao(page, "Em andamento", "Cano estourado")).toContainText("Urgente");
+  await arrastar(page, cartao(page, "Em andamento", "Cano estourado"), coluna(page, "Resolvidos"));
+  await page.getByRole("dialog", { name: "Marcar como resolvido" }).getByRole("button", { name: "Marcar como resolvido" }).click();
+  await expect(cartao(page, "Resolvidos", "Cano estourado")).toBeVisible();
+  await expect(cartao(page, "Resolvidos", "Cano estourado")).toContainText("Resolvido");
+  await expect(cartao(page, "Resolvidos", "Cano estourado")).not.toContainText("Urgente");
+});
+
+test("quadro: título e filtro na mesma linha e colunas da mesma altura", async ({ page }) => {
+  await entrar(page, emailDeTeste("dono-topo"));
+  await cadastrarImovel(page, "Casa A", { rua: "Rua A", numero: "1", bairro: "Centro" });
+  await cadastrarImovel(page, "Casa B", { rua: "Rua B", numero: "2", bairro: "Centro" });
+  await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Chamados" }).click();
+
+  // O rótulo some da tela, mas o leitor de tela continua anunciando o campo
+  const filtro = (await page.getByRole("combobox", { name: "Imóvel" }).boundingBox())!;
+  const titulo = (await page.getByRole("heading", { name: "Chamados" }).boundingBox())!;
+  expect(filtro.y).toBeLessThan(titulo.y + titulo.height);
+  expect(filtro.x).toBeGreaterThan(titulo.x + titulo.width);
+
+  const novos = (await coluna(page, "Novos").boundingBox())!;
+  const resolvidos = (await coluna(page, "Resolvidos").boundingBox())!;
+  expect(resolvidos.height).toBe(novos.height);
+  expect(resolvidos.x).toBeGreaterThan(novos.x + novos.width);
+});
+
+test("inquilino: formulário sozinho e, com pedidos, lista ao lado", async ({ page, browser }) => {
+  await entrar(page, emailDeTeste("dono-inquilino-pc"));
+  await cadastrarImovel(page, "Casa A", { rua: "Rua A", numero: "1", bairro: "Centro" });
+  const link = await adicionarInquilino(page, "Maria");
+  const inquilina = await (await browser.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
+  await inquilina.goto(link);
+  const formulario = inquilina.getByLabel("Pedir um conserto");
+
+  // Sem pedidos: formulário centralizado
+  const sozinho = (await formulario.boundingBox())!;
+  expect(Math.abs(sozinho.x + sozinho.width / 2 - 720)).toBeLessThan(2);
+
+  await abrirChamado(inquilina, { categoria: "Elétrica", descricao: "Tomada da sala sem energia" });
+  await inquilina.reload();
+
+  // Com pedidos: a lista fica à direita, à vista sem rolar
+  const pedidos = inquilina.getByRole("region", { name: "Seus pedidos" });
+  await expect(pedidos.getByRole("listitem")).toHaveCount(1);
+  const caixaForm = (await formulario.boundingBox())!;
+  const caixaPedidos = (await pedidos.boundingBox())!;
+  expect(caixaPedidos.x).toBeGreaterThan(caixaForm.x + caixaForm.width - 1);
+  await expect(pedidos.getByRole("listitem")).toBeInViewport();
+});
+
+test("ajustes: cartões em pares no computador", async ({ page }) => {
+  await entrar(page, emailDeTeste("dono-ajustes-pc"));
+  await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Ajustes" }).click();
+  const conta = page.getByLabel("Sua conta");
+  await expect(conta).toBeVisible();
+
+  const caixa = async (nome: string) => (await page.getByLabel(nome, { exact: true }).boundingBox())!;
+  const [avisos, silencio, dados, aparencia] = await Promise.all(
+    ["Avisos no celular", "Horário de silêncio", "Sua conta", "Aparência"].map(caixa),
+  );
+  expect(silencio.y).toBe(avisos.y);
+  expect(silencio.x).toBeGreaterThan(avisos.x + avisos.width);
+  expect(aparencia.y).toBe(dados.y);
+  expect(dados.y).toBeGreaterThan(avisos.y + avisos.height);
 });
 
 test("imóveis: grade no computador e, no imóvel, inquilinos ao lado do cadastro", async ({ page }) => {

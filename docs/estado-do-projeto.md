@@ -1,6 +1,6 @@
 # Zelo — estado do projeto e próximos passos
 
-Atualizado em 29/10/2026. Use este arquivo para começar um chat novo: ele resume o que já foi feito, como o projeto funciona e o que está pendente.
+Atualizado em 02/11/2026. Use este arquivo para começar um chat novo: ele resume o que já foi feito, como o projeto funciona e o que está pendente.
 
 ## O que é o Zelo
 
@@ -35,8 +35,10 @@ Tudo tem commit e está no GitHub, num repositório **privado**: https://github.
    - no primeiro acesso, pede só o nome (`/boas-vindas`).
 3. **Imóveis e inquilinos:**
    - endereço separado em rua, número, complemento e bairro;
+   - CEP opcional que preenche rua e bairro pelo ViaCEP (busca feita pelo navegador; o CEP não é guardado e cidade/UF aparecem só como confirmação);
    - o link do inquilino é guardado só como hash e aparece uma única vez;
-   - mostra "Visto em ...", permite gerar novo link, desativar e reativar.
+   - mostra "Visto em ...", permite gerar novo link, desativar e reativar;
+   - foto opcional do imóvel (bucket privado `fotos-imoveis`, só o dono lê, envia e apaga), com troca e remoção na edição e uma imagem padrão (casa) quando não há foto.
 4. **Página do inquilino (`/c/[token]`):**
    - abre chamado com categoria, descrição, foto (reduzida no celular, sem dados de localização), urgência e melhor horário;
    - lista "Seus pedidos";
@@ -60,32 +62,36 @@ Tudo tem commit e está no GitHub, num repositório **privado**: https://github.
    - modo escuro que segue o celular, escolha do tema em Ajustes → Aparência (troca suave) e teste de contraste WCAG.
 9. **Layout para computador:**
    - kanban de chamados (Novos, Em andamento, Resolvidos dos últimos 30 dias) com painel lateral (`?chamado=`) e arrastar pelo mouse e pelo teclado (dnd-kit);
+   - topo compacto (título e filtro na mesma linha), colunas da mesma altura até o fim da tela e títulos fixos ao rolar;
+   - cartões com a etiqueta do status e, no urgente, também "Urgente", que continua em andamento e sai ao resolver;
    - soltar em Resolvidos abre uma janela para recado e custo;
-   - imóveis em grade e, na página do imóvel, inquilinos ao lado do cadastro;
-   - formulários continuam numa coluna estreita (`ColunaEstreita`).
+   - imóveis em grade com a foto em cima (no celular, miniatura à esquerda) e, na página do imóvel, inquilinos ao lado do cadastro;
+   - Ajustes com os cartões em pares;
+   - página do inquilino com barra da logo (`MolduraPublica`), formulário à esquerda e "Seus pedidos" à direita; sem pedidos, o formulário fica centralizado;
+   - cadastro e edição de imóvel num painel (apelido em destaque e endereço começando pelo CEP) com a prévia ao vivo do cartão ao lado, onde se escolhe ou arrasta a foto; no celular, a prévia vem antes de salvar;
+   - link inválido e avaliação ficam num cartão estreito.
 
-**Testes:** 212 unitários (Vitest), 79 do banco (pgTAP) e 30 de ponta a ponta (Playwright), sendo 27 no celular e 3 no computador (`*.pc.spec.ts`). Rode com `make test-all`.
+**Testes:** 219 unitários (Vitest), 85 do banco (pgTAP) e 35 de ponta a ponta (Playwright), sendo 29 no celular e 6 no computador (`*.pc.spec.ts`). Rode com `make test-all`.
 
 **Comandos úteis:**
 - `make dev`, `make dev-limpar` (quando o cache do Next ficar velho), `make db-start` e `make db-migrate`;
 - `make avisos-config` (configura no Vault do banco a URL das funções e o segredo dos avisos);
-- `make mail-clear`, `make test-all`;
+- `make mail-clear`, `make test-all` (rode os testes pelo `make`: o teste de avisos precisa do acesso ao Docker que ele configura);
 - e-mails locais em http://localhost:54324.
 
 ## Pendências para as próximas atualizações
 
-### Ajustes de tela no computador (o celular está perfeito; não mexer)
+O celular está perfeito; não mexer sem pedir.
 
-1. **Tela principal (Chamados) no computador:** revisar e refinar o layout do kanban e do topo da página.
-2. **Página do inquilino (`/c/[token]`) no computador:** ainda está no formato de celular; precisa de um layout próprio para a tela larga.
+### Observabilidade
+
+- **Datadog:** o usuário quer começar a usar. Fazer junto com a publicação, em etapas: erros e logs do servidor, depois rastreamento e, por último, o navegador. Hoje só existem 5 `console.error`. Antes, definir a hospedagem (Vercel ou Docker), ver o custo e tratar a Edge Function, que roda no Supabase. O token de `/c/[token]` e `/avaliar/[token]` funciona como senha: mascarar nos logs e rastreamentos, assim como e-mails e descrições.
 
 ### Melhorias pedidas
 
-1. **Foto do imóvel:** poder colocar imagem em cada imóvel. Usar Storage privado, como as fotos dos chamados.
-2. **Preencher endereço pelo CEP:** digitar o CEP e preencher rua e bairro. Isso usa um serviço externo (ex.: ViaCEP); confirmar qual antes. Decidir também se o imóvel passa a ter os campos cidade/UF/CEP, que hoje não existem.
-3. **Excluir imóvel, com janela de confirmação:** decidir o que acontece com imóveis que têm chamados. A proposta anterior era excluir só os que não têm chamados e arquivar os outros, para não perder o histórico.
-4. **Filtros e busca:** na lista de imóveis e no kanban (por texto, imóvel, categoria, período...).
-5. **Dados de demonstração (seed):** proprietários, imóveis, inquilinos e chamados de exemplo, para ter volume ao apresentar. Lembrar que o login é por código no e-mail: no local o código chega no Mailpit.
+1. **Excluir imóvel, com janela de confirmação:** (lembrar de apagar a foto do bucket `fotos-imoveis`) decidir o que acontece com imóveis que têm chamados. A proposta anterior era excluir só os que não têm chamados e arquivar os outros, para não perder o histórico.
+2. **Filtros e busca:** na lista de imóveis e no kanban (por texto, imóvel, categoria, período...).
+3. **Dados de demonstração (seed):** proprietários, imóveis, inquilinos e chamados de exemplo, para ter volume ao apresentar. Lembrar que o login é por código no e-mail: no local o código chega no Mailpit.
 
 ### Ainda pendente do plano original
 

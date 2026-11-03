@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { FormAvaliacao } from "@/components/form-avaliacao";
-import { Logo } from "@/components/marca";
+import { MolduraPublica } from "@/components/moldura-publica";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buscarChamadoParaAvaliar } from "@/lib/chamados/avaliacao";
 import { rotuloDaCategoria } from "@/lib/chamados/categorias";
@@ -17,14 +17,14 @@ export const metadata: Metadata = {
 // Pesquisa de satisfação aberta pelo e-mail (link de uso único, sem login).
 export default function AvaliarPage({ params }: PageProps<"/avaliar/[token]">) {
   return (
-    <main className="flex flex-1 flex-col items-center px-4 py-8">
-      <div className="flex w-full max-w-md flex-col gap-6">
-        <Logo altura={36} />
+    <MolduraPublica>
+      {/* Uma pergunta só: fica estreita também no computador. */}
+      <div className="mx-auto flex w-full max-w-md flex-col gap-6">
         <Suspense fallback={<p className="text-muted-foreground">Carregando...</p>}>
           <Conteudo params={params} />
         </Suspense>
       </div>
-    </main>
+    </MolduraPublica>
   );
 }
 

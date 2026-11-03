@@ -3,7 +3,7 @@ import { after } from "next/server";
 import { Suspense } from "react";
 
 import { FormAvaliacao } from "@/components/form-avaliacao";
-import { Logo } from "@/components/marca";
+import { MolduraPublica } from "@/components/moldura-publica";
 import { StatusBadge } from "@/components/status-badge";
 import {
   Card,
@@ -17,6 +17,7 @@ import { listarChamadosDoInquilino } from "@/lib/chamados/inquilino";
 import { statusVisual } from "@/lib/chamados/status";
 import { formatarDataHora } from "@/lib/datas";
 import { buscarInquilinoPeloLink, registrarAcesso } from "@/lib/inquilinos/acesso";
+import { cn } from "cn";
 
 import { avaliarChamadoDoInquilino } from "./actions";
 import { PedidoDeConserto } from "./form-chamado";
@@ -31,14 +32,11 @@ export const metadata: Metadata = {
 // Página do inquilino, aberta pelo link exclusivo (sem login).
 export default function PaginaDoInquilino({ params }: PageProps<"/c/[token]">) {
   return (
-    <main className="flex flex-1 flex-col items-center px-4 py-8">
-      <div className="flex w-full max-w-md flex-col gap-6">
-        <Logo altura={36} />
-        <Suspense fallback={<p className="text-muted-foreground">Carregando...</p>}>
-          <Conteudo params={params} />
-        </Suspense>
-      </div>
-    </main>
+    <MolduraPublica>
+      <Suspense fallback={<p className="text-muted-foreground">Carregando...</p>}>
+        <Conteudo params={params} />
+      </Suspense>
+    </MolduraPublica>
   );
 }
 
@@ -48,7 +46,7 @@ async function Conteudo({ params }: Pick<PageProps<"/c/[token]">, "params">) {
 
   if (!inquilino) {
     return (
-      <Card>
+      <Card className="mx-auto w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-xl">Este link não funciona mais</CardTitle>
           <CardDescription>
@@ -66,10 +64,20 @@ async function Conteudo({ params }: Pick<PageProps<"/c/[token]">, "params">) {
   // Registra o "Visto em" depois de responder, sem atrasar a página.
   after(() => registrarAcesso(inquilino.id));
   const chamados = await listarChamadosDoInquilino(inquilino.id);
+  const temPedidos = chamados.length > 0;
 
   return (
-    <>
-      <div>
+    // No computador: formulário à esquerda e pedidos à direita, sempre à vista.
+    // Sem pedidos ainda, o formulário fica sozinho, centralizado.
+    <div
+      className={cn(
+        "flex flex-col gap-6",
+        temPedidos
+          ? "lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-x-8"
+          : "lg:mx-auto lg:w-full lg:max-w-2xl",
+      )}
+    >
+      <div className="lg:col-span-2">
         <h1 className="text-2xl font-semibold">Olá, {inquilino.nome}!</h1>
         <p className="text-muted-foreground">
           Imóvel: {inquilino.apelidoImovel}. Guarde este link nos favoritos: é
@@ -86,8 +94,11 @@ async function Conteudo({ params }: Pick<PageProps<"/c/[token]">, "params">) {
         </CardContent>
       </Card>
 
-      {chamados.length > 0 && (
-        <section className="flex flex-col gap-3" aria-labelledby="seus-pedidos">
+      {temPedidos && (
+        <section
+          className="flex flex-col gap-3 lg:sticky lg:top-6 lg:-m-1 lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto lg:p-1"
+          aria-labelledby="seus-pedidos"
+        >
           <h2 id="seus-pedidos" className="text-lg font-semibold">
             Seus pedidos
           </h2>
@@ -122,6 +133,6 @@ async function Conteudo({ params }: Pick<PageProps<"/c/[token]">, "params">) {
           </ul>
         </section>
       )}
-    </>
+    </div>
   );
 }

@@ -20,13 +20,16 @@ export function FiltroImovel({
   return (
     <Form action="/chamados" className="flex flex-col gap-2">
       <input type="hidden" name="aba" value={aba} />
-      <Label htmlFor={id}>Imóvel</Label>
+      {/* No computador o "Todos os imóveis" já explica o campo. */}
+      <Label htmlFor={id} className="lg:sr-only">
+        Imóvel
+      </Label>
       <select
         id={id}
         name="imovel"
         defaultValue={imovelId ?? ""}
         onChange={(evento) => evento.currentTarget.form?.requestSubmit()}
-        className="h-11 rounded-lg border border-input bg-card px-2.5 text-base"
+        className="h-11 rounded-lg border border-input bg-card px-2.5 text-base lg:h-9 lg:text-sm"
       >
         <option value="">Todos os imóveis</option>
         {imoveis.map(({ id: valor, apelido }) => (

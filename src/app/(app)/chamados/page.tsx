@@ -32,13 +32,15 @@ export const metadata: Metadata = {
 // Tela de entrada do app (start_url da PWA): chamados de todos os imóveis.
 export default function ChamadosPage({ searchParams }: PageProps<"/chamados">) {
   return (
-    <>
+    // No computador, título e filtro dividem a primeira linha, e o quadro ocupa
+    // a linha de baixo inteira. No celular a grade não existe (`contents`).
+    <div className="contents lg:grid lg:grid-cols-[1fr_auto] lg:items-center lg:gap-x-4 lg:gap-y-3">
       <h1 className="text-2xl font-semibold">Chamados</h1>
       {/* Aba e filtro vêm da URL, que só existe na requisição. */}
-      <Suspense fallback={<p className="text-muted-foreground">Carregando...</p>}>
+      <Suspense fallback={<p className="text-muted-foreground lg:col-span-2">Carregando...</p>}>
         <ConteudoChamados searchParams={searchParams} />
       </Suspense>
-    </>
+    </div>
   );
 }
 
@@ -59,7 +61,7 @@ async function ConteudoChamados({ searchParams }: Pick<PageProps<"/chamados">, "
 
   if (imoveis.length === 0) {
     return (
-      <p className="text-muted-foreground">
+      <p className="text-muted-foreground lg:col-span-2">
         Nenhum chamado ainda. Cadastre um imóvel em{" "}
         <Link href="/imoveis" className="underline">
           Imóveis
@@ -84,7 +86,7 @@ async function ConteudoChamados({ searchParams }: Pick<PageProps<"/chamados">, "
     cartoes: quadro[status].map((chamado) => ({
       id: chamado.id,
       status: chamado.status,
-      statusVisual: statusVisual(chamado),
+      urgente: chamado.urgente,
       titulo: `${rotuloDaCategoria(chamado.categoria)} · ${chamado.imoveis.apelido}`,
       descricao: chamado.descricao,
       rodape: `${chamado.inquilinos?.nome ?? "Inquilino removido"} · ${tempoDesde(
@@ -101,12 +103,12 @@ async function ConteudoChamados({ searchParams }: Pick<PageProps<"/chamados">, "
   return (
     <>
       {imoveis.length > 1 && (
-        <div className="lg:max-w-xs">
+        <div className="lg:col-start-2 lg:row-start-1 lg:w-64">
           <FiltroImovel aba={aba} imovelId={imovelId} imoveis={imoveis} />
         </div>
       )}
 
-      <div className="hidden lg:block">
+      <div className="hidden lg:col-span-2 lg:block">
         <Quadro colunas={colunas} selecionado={chamadoAberto} />
         {chamadoAberto && (
           <Suspense>

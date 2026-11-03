@@ -42,7 +42,7 @@ export function FormNome({ nome }: { nome: string }) {
         required
       />
       <Retorno estado={estado} />
-      <Button type="submit" variant="outline" disabled={pendente} className="h-11 text-base">
+      <Button type="submit" variant="outline" disabled={pendente} className="h-11 text-base lg:self-end lg:px-6">
         {pendente ? "Salvando..." : "Salvar nome"}
       </Button>
     </form>
@@ -75,7 +75,7 @@ export function FormSilencio({ inicio, fim }: { inicio: string; fim: string }) {
         />
       </div>
       <Retorno estado={estado} />
-      <Button type="submit" variant="outline" disabled={pendente} className="h-11 text-base">
+      <Button type="submit" variant="outline" disabled={pendente} className="h-11 text-base lg:self-end lg:px-6">
         {pendente ? "Salvando..." : "Salvar horário"}
       </Button>
     </form>

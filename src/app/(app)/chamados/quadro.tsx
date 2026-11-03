@@ -32,7 +32,7 @@ import { DialogoResolver } from "./dialogo-resolver";
 export type CartaoDoQuadro = {
   id: string;
   status: StatusChamado;
-  statusVisual: StatusVisual;
+  urgente: boolean;
   titulo: string;
   descricao: string;
   rodape: string;
@@ -46,11 +46,18 @@ export type ColunaDoQuadro = { status: StatusChamado; titulo: string; cartoes: C
 
 type Movimento = { id: string; para: StatusChamado };
 
+// Etiqueta do status no cartão ("aberto" aparece como "Novo").
+const STATUS_DA_ETIQUETA: Record<StatusChamado, StatusVisual> = {
+  aberto: "novo",
+  em_andamento: "em_andamento",
+  resolvido: "resolvido",
+};
+
 // Move o cartão para o topo da coluna de destino (antes da resposta do servidor).
 function moverCartao(colunas: ColunaDoQuadro[], { id, para }: Movimento) {
   const cartao = colunas.flatMap((coluna) => coluna.cartoes).find((c) => c.id === id);
   if (!cartao) return colunas;
-  const movido: CartaoDoQuadro = { ...cartao, status: para, statusVisual: para === "aberto" ? cartao.statusVisual : para };
+  const movido: CartaoDoQuadro = { ...cartao, status: para };
   return colunas.map((coluna) => ({
     ...coluna,
     cartoes:
@@ -181,15 +188,14 @@ export function Quadro({ colunas, selecionado }: { colunas: ColunaDoQuadro[]; se
 
   return (
     <div className="flex flex-col gap-3" data-pronto={pronto || undefined}>
-      <p className="text-sm text-muted-foreground">
-        Arraste um chamado para outra coluna para mudar o status, ou clique para ver o detalhe.
-      </p>
-      <div aria-live="polite" className="min-h-5">
-        {aviso && (
-          <p className={cn("text-sm", aviso.erro ? "text-destructive" : "text-status-resolvido-foreground")}>
-            {aviso.texto}
-          </p>
-        )}
+      {/* Uma linha só: a dica dá lugar ao aviso, sem empurrar o quadro. */}
+      <div className="min-h-5 text-sm">
+        {!aviso && <p className="text-muted-foreground">Arraste para mudar o status. Clique para ver o detalhe.</p>}
+        <div aria-live="polite">
+          {aviso && (
+            <p className={aviso.erro ? "text-destructive" : "text-status-resolvido-foreground"}>{aviso.texto}</p>
+          )}
+        </div>
       </div>
 
       <DndContext
@@ -207,7 +213,9 @@ export function Quadro({ colunas, selecionado }: { colunas: ColunaDoQuadro[]; se
           },
         }}
       >
-        <div className="grid grid-cols-3 items-start gap-4">
+        {/* As colunas têm a mesma altura e vão até o fim da tela: dá para soltar
+            um cartão em qualquer ponto, mesmo numa coluna quase vazia. */}
+        <div className="grid min-h-[calc(100dvh-12.5rem)] grid-cols-3 gap-4">
           {exibidas.map((coluna) => (
             <Coluna key={coluna.status} coluna={coluna}>
               {coluna.cartoes.map((cartao) => (
@@ -246,9 +254,13 @@ function Coluna({ coluna, children }: { coluna: ColunaDoQuadro; children: React.
         isOver && "ring-2 ring-ring/60",
       )}
     >
-      <h2 className="flex items-center justify-between px-1 text-sm font-semibold">
+      {/* O título acompanha a rolagem em colunas compridas. */}
+      <h2 className="sticky top-0 z-[1] -mx-3 -mt-3 flex items-center gap-2 rounded-t-xl bg-muted px-4 pt-3 pb-1 text-sm font-semibold">
         {coluna.titulo}
-        <span className="rounded-full bg-card px-2 py-0.5 text-xs text-muted-foreground">
+        {coluna.status === "resolvido" && (
+          <span className="text-xs font-normal text-muted-foreground">Últimos 30 dias</span>
+        )}
+        <span className="ml-auto rounded-full bg-card px-2 py-0.5 text-xs text-muted-foreground">
           {coluna.cartoes.length}
         </span>
       </h2>
@@ -257,7 +269,6 @@ function Coluna({ coluna, children }: { coluna: ColunaDoQuadro; children: React.
       ) : (
         <ul className="flex flex-col gap-2">{children}</ul>
       )}
-      {coluna.status === "resolvido" && <p className="px-1 text-xs text-muted-foreground">Últimos 30 dias</p>}
     </section>
   );
 }
@@ -285,9 +296,12 @@ function Cartao({ cartao, selecionado }: { cartao: CartaoDoQuadro; selecionado: 
         isDragging && "relative z-10 cursor-grabbing shadow-lg ring-2 ring-ring/40",
       )}
     >
-      <div className="flex items-start justify-between gap-2">
-        <span className="text-sm font-semibold">{cartao.titulo}</span>
-        <StatusBadge status={cartao.statusVisual} className="shrink-0 text-xs" />
+      <span className="text-sm font-semibold">{cartao.titulo}</span>
+      {/* Etiquetas numa linha própria, para o título não quebrar. O urgente
+          continua marcado em andamento (ainda é prioridade) e sai ao resolver. */}
+      <div className="flex flex-wrap gap-1.5">
+        <StatusBadge status={STATUS_DA_ETIQUETA[cartao.status]} className="text-xs" />
+        {cartao.urgente && cartao.status !== "resolvido" && <StatusBadge status="urgente" className="text-xs" />}
       </div>
       <p className="line-clamp-2 text-sm">{cartao.descricao}</p>
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">

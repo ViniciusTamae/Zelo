@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+import { FotoImovel } from "@/components/foto-imovel";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
@@ -51,9 +52,16 @@ async function DetalheImovel({
   return (
     <>
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">{imovel.apelido}</h1>
-          <p className="text-muted-foreground">{imovel.endereco}</p>
+        <div className="flex items-center gap-4">
+          <FotoImovel
+            url={imovel.fotoUrl}
+            apelido={imovel.apelido}
+            className="size-16 shrink-0 rounded-lg lg:h-24 lg:w-36"
+          />
+          <div>
+            <h1 className="text-2xl font-semibold">{imovel.apelido}</h1>
+            <p className="text-muted-foreground">{imovel.endereco}</p>
+          </div>
         </div>
         <Link
           href={`/imoveis/${imovel.id}/editar`}

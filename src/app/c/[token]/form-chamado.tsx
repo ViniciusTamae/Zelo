@@ -1,23 +1,14 @@
 "use client";
 
-import {
-  Camera,
-  CloudRain,
-  Droplets,
-  Ellipsis,
-  X,
-  Zap,
-  type LucideIcon,
-} from "lucide-react";
-import { useActionState, useEffect, useId, useRef, useState } from "react";
+import { CloudRain, Droplets, Ellipsis, Zap, type LucideIcon } from "lucide-react";
+import { useActionState, useId, useState } from "react";
 
+import { CampoFoto } from "@/components/campo-foto";
 import { CampoTexto, LegendaObrigatorio } from "@/components/campo-texto";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CATEGORIAS, type Categoria } from "@/lib/chamados/categorias";
-import { TAMANHO_MAXIMO_FOTO } from "@/lib/chamados/esquemas";
-import { reduzirFoto } from "@/lib/chamados/reduzir-foto";
 
 import { abrirChamadoDoInquilino, type EstadoChamado } from "./actions";
 
@@ -70,7 +61,7 @@ function FormChamado({ token, onNovoPedido }: { token: string; onNovoPedido: () 
             *
           </span>
         </legend>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
           {CATEGORIAS.map(({ valor, rotulo, exemplos }) => {
             const Icone = ICONES[valor];
             return (
@@ -127,33 +118,36 @@ function FormChamado({ token, onNovoPedido }: { token: string; onNovoPedido: () 
         )}
       </div>
 
-      <CampoFoto id={`${id}-foto`} erroDoServidor={estado.erros?.foto} />
+      {/* No computador: foto e horário lado a lado, com o "É urgente" embaixo. */}
+      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-end">
+        <CampoFoto id={`${id}-foto`} erroDoServidor={estado.erros?.foto} />
 
-      <label className="flex cursor-pointer gap-3 rounded-lg border bg-card p-3 has-checked:border-status-urgente-foreground has-checked:bg-status-urgente">
-        <input
-          type="checkbox"
-          name="urgente"
-          defaultChecked={estado.valores?.urgente === "on"}
-          className="mt-1 size-5 shrink-0 accent-status-urgente-foreground"
-        />
-        <span className="flex flex-col gap-1">
-          <span className="font-semibold">É urgente</span>
-          <span className="text-sm text-muted-foreground">
-            Marque só se não dá para esperar: vazamento forte, falta de energia
-            ou risco à segurança. O proprietário é avisado mesmo à noite.
+        <label className="flex cursor-pointer gap-3 rounded-lg border bg-card p-3 has-checked:border-status-urgente-foreground has-checked:bg-status-urgente lg:order-last lg:col-span-2">
+          <input
+            type="checkbox"
+            name="urgente"
+            defaultChecked={estado.valores?.urgente === "on"}
+            className="mt-1 size-5 shrink-0 accent-status-urgente-foreground"
+          />
+          <span className="flex flex-col gap-1">
+            <span className="font-semibold">É urgente</span>
+            <span className="text-sm text-muted-foreground">
+              Marque só se não dá para esperar: vazamento forte, falta de energia
+              ou risco à segurança. O proprietário é avisado mesmo à noite.
+            </span>
           </span>
-        </span>
-      </label>
+        </label>
 
-      <CampoTexto
-        id={`${id}-horario`}
-        nome="melhor_horario"
-        rotulo="Melhor horário para o conserto (opcional)"
-        valor={estado.valores?.melhor_horario}
-        erro={estado.erros?.melhor_horario}
-        placeholder="Ex.: dias úteis depois das 18h"
-        maxLength={100}
-      />
+        <CampoTexto
+          id={`${id}-horario`}
+          nome="melhor_horario"
+          rotulo="Melhor horário para o conserto (opcional)"
+          valor={estado.valores?.melhor_horario}
+          erro={estado.erros?.melhor_horario}
+          placeholder="Ex.: dias úteis depois das 18h"
+          maxLength={100}
+        />
+      </div>
 
       {estado.erroGeral && (
         <p role="alert" className="text-sm text-destructive">
@@ -161,95 +155,9 @@ function FormChamado({ token, onNovoPedido }: { token: string; onNovoPedido: () 
         </p>
       )}
 
-      <Button type="submit" disabled={pendente} className="h-11 w-full text-base">
+      <Button type="submit" disabled={pendente} className="h-11 w-full text-base lg:w-auto lg:self-end lg:px-8">
         {pendente ? "Enviando..." : "Enviar pedido"}
       </Button>
     </form>
-  );
-}
-
-// Foto opcional: reduzida no próprio celular antes de ir para o formulário.
-function CampoFoto({ id, erroDoServidor }: { id: string; erroDoServidor?: string }) {
-  const entrada = useRef<HTMLInputElement>(null);
-  const [previa, setPrevia] = useState<string | null>(null);
-  const [preparando, setPreparando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
-
-  // Libera a memória da prévia anterior.
-  useEffect(() => () => {
-    if (previa) URL.revokeObjectURL(previa);
-  }, [previa]);
-
-  async function escolher(evento: React.ChangeEvent<HTMLInputElement>) {
-    const original = evento.target.files?.[0];
-    setErro(null);
-    if (!original) return setPrevia(null);
-
-    setPreparando(true);
-    const reduzida = await reduzirFoto(original);
-    setPreparando(false);
-
-    if (reduzida.size > TAMANHO_MAXIMO_FOTO) {
-      remover();
-      setErro("A foto é muito grande. Tente tirar outra pela câmera.");
-      return;
-    }
-    // Troca o arquivo do campo pela versão reduzida (é ela que vai no envio).
-    const transferencia = new DataTransfer();
-    transferencia.items.add(reduzida);
-    evento.target.files = transferencia.files;
-    setPrevia(URL.createObjectURL(reduzida));
-  }
-
-  function remover() {
-    if (entrada.current) entrada.current.value = "";
-    setPrevia(null);
-  }
-
-  const mensagem = erro ?? erroDoServidor;
-
-  return (
-    <div className="flex flex-col gap-2">
-      <Label htmlFor={id}>Foto (opcional)</Label>
-      <input
-        ref={entrada}
-        id={id}
-        name="foto"
-        type="file"
-        accept="image/*"
-        onChange={escolher}
-        className="sr-only"
-        aria-describedby={mensagem ? `${id}-erro` : undefined}
-      />
-      {previa ? (
-        <div className="relative w-fit">
-          {/* eslint-disable-next-line @next/next/no-img-element -- prévia local (blob:), não passa pelo otimizador */}
-          <img src={previa} alt="Prévia da foto escolhida" className="max-h-48 rounded-lg border" />
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={remover}
-            aria-label="Remover foto"
-            className="absolute top-2 right-2 bg-card"
-          >
-            <X />
-          </Button>
-        </div>
-      ) : (
-        <label
-          htmlFor={id}
-          className="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed bg-card text-base font-semibold"
-        >
-          <Camera aria-hidden="true" className="size-5" />
-          {preparando ? "Preparando foto..." : "Tirar ou escolher foto"}
-        </label>
-      )}
-      {mensagem && (
-        <p id={`${id}-erro`} className="text-sm text-destructive">
-          {mensagem}
-        </p>
-      )}
-    </div>
   );
 }

@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { obterProprietario } from "@/lib/auth";
+import { validarFoto } from "@/lib/chamados/esquemas";
 import {
   errosPorCampo,
   lerCampos,
@@ -15,13 +16,17 @@ import {
   imovelSchema,
   inquilinoSchema,
 } from "@/lib/imoveis/esquemas";
+import { apagarFotoDoImovel, enviarFotoDoImovel } from "@/lib/imoveis/fotos";
 import { gerarToken } from "@/lib/inquilinos/token";
 import { linkDoInquilino } from "@/lib/links";
 import { createClient } from "@/lib/supabase/server";
 
 const ERRO_GENERICO = "Não foi possível salvar agora. Tente de novo.";
 
+const ERRO_FOTO = "Não foi possível enviar a foto agora. Tente de novo.";
+
 // Cria um imóvel (sem id) ou atualiza um existente (com id) e abre a página dele.
+// A foto é opcional: nova foto substitui a antiga; "remover_foto" volta ao padrão.
 export async function salvarImovel(
   _anterior: EstadoFormulario,
   formData: FormData,
@@ -31,9 +36,15 @@ export async function salvarImovel(
   const id = formData.get("id");
 
   const dados = imovelSchema.safeParse(valores);
-  if (!dados.success) {
-    return { erros: errosPorCampo(dados.error), valores };
+  // A foto é conferida antes de salvar qualquer coisa.
+  const { foto, erro: erroFoto } = await validarFoto(formData.get("foto"));
+  if (!dados.success || erroFoto) {
+    return {
+      erros: { ...(dados.success ? {} : errosPorCampo(dados.error)), ...(erroFoto ? { foto: erroFoto } : {}) },
+      valores,
+    };
   }
+  const removerFoto = formData.get("remover_foto") === "1";
 
   const supabase = await createClient();
   let imovelId: string;
@@ -47,10 +58,21 @@ export async function salvarImovel(
       .from("imoveis")
       .update(dados.data)
       .eq("id", idValido.data)
-      .select("id")
+      .select("id, foto_path")
       .maybeSingle();
     if (error || !data) return { erroGeral: ERRO_GENERICO, valores };
     imovelId = data.id;
+
+    const fotoAntiga = data.foto_path;
+    if (foto) {
+      const erro = await trocarFoto(supabase, imovelId, foto);
+      if (erro) return { erroGeral: "Os dados foram salvos, mas a foto não. Tente enviar de novo.", valores };
+      if (fotoAntiga) await apagarFotoDoImovel(supabase, fotoAntiga);
+    } else if (removerFoto && fotoAntiga) {
+      const { error: erroRemover } = await supabase.from("imoveis").update({ foto_path: null }).eq("id", imovelId);
+      if (erroRemover) return { erroGeral: ERRO_GENERICO, valores };
+      await apagarFotoDoImovel(supabase, fotoAntiga);
+    }
   } else {
     const { data, error } = await supabase
       .from("imoveis")
@@ -59,9 +81,37 @@ export async function salvarImovel(
       .single();
     if (error) return { erroGeral: ERRO_GENERICO, valores };
     imovelId = data.id;
+
+    // A pasta da foto é o id do imóvel, que só existe depois de criá-lo. Se a
+    // foto falhar, desfaz o cadastro: salvar de novo não cria um imóvel repetido.
+    if (foto && (await trocarFoto(supabase, imovelId, foto))) {
+      await supabase.from("imoveis").delete().eq("id", imovelId);
+      return { erroGeral: ERRO_FOTO, valores };
+    }
   }
 
   redirect(`/imoveis/${imovelId}`);
+}
+
+// Envia a foto e grava o caminho no imóvel. Devolve true se algo falhou (sem
+// deixar arquivo solto no bucket).
+async function trocarFoto(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  imovelId: string,
+  foto: NonNullable<Awaited<ReturnType<typeof validarFoto>>["foto"]>,
+) {
+  let caminho: string;
+  try {
+    caminho = await enviarFotoDoImovel(supabase, imovelId, foto);
+  } catch {
+    return true;
+  }
+  const { error } = await supabase.from("imoveis").update({ foto_path: caminho }).eq("id", imovelId);
+  if (error) {
+    await apagarFotoDoImovel(supabase, caminho);
+    return true;
+  }
+  return false;
 }
 
 // O link só existe na resposta destas ações: o banco guarda apenas o hash do

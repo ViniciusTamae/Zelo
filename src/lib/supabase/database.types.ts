@@ -71,14 +71,14 @@ isOneToOne: false
                   ]
                 },"imoveis": {
                   Row: {
-                    "apelido": string,"atualizado_em": string,"bairro": string,"complemento": string | null,"criado_em": string,"dono_id": string,"id": string,"logradouro": string,"numero": string
+                    "apelido": string,"atualizado_em": string,"bairro": string,"complemento": string | null,"criado_em": string,"dono_id": string,"foto_path": string | null,"id": string,"logradouro": string,"numero": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "apelido": string,"atualizado_em"?: string,"bairro": string,"complemento"?: string | null,"criado_em"?: string,"dono_id": string,"id"?: string,"logradouro": string,"numero": string
+                    "apelido": string,"atualizado_em"?: string,"bairro": string,"complemento"?: string | null,"criado_em"?: string,"dono_id": string,"foto_path"?: string | null,"id"?: string,"logradouro": string,"numero": string
                   }
                   Update: {
-                    "apelido"?: string,"atualizado_em"?: string,"bairro"?: string,"complemento"?: string | null,"criado_em"?: string,"dono_id"?: string,"id"?: string,"logradouro"?: string,"numero"?: string
+                    "apelido"?: string,"atualizado_em"?: string,"bairro"?: string,"complemento"?: string | null,"criado_em"?: string,"dono_id"?: string,"foto_path"?: string | null,"id"?: string,"logradouro"?: string,"numero"?: string
                   }
                   Relationships: [
                     {

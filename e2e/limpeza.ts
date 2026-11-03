@@ -46,4 +46,12 @@ async function apagarFotos(supabase: ReturnType<typeof clienteAdmin>, donos: str
       if (caminhos.length > 0) await bucket.remove(caminhos);
     }
   }
+
+  // Fotos dos imóveis ficam em <imovel_id>/<arquivo>.
+  const fotosImoveis = supabase.storage.from("fotos-imoveis");
+  for (const { id } of imoveis) {
+    const { data: arquivos } = await fotosImoveis.list(id);
+    const caminhos = (arquivos ?? []).map((arquivo) => `${id}/${arquivo.name}`);
+    if (caminhos.length > 0) await fotosImoveis.remove(caminhos);
+  }
 }

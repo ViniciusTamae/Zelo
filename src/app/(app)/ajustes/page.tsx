@@ -10,7 +10,6 @@ import { sair } from "../actions";
 import { Aparencia } from "./aparencia";
 import { AvisosAparelho } from "./avisos-aparelho";
 import { FormNome, FormSilencio } from "./formularios";
-import { ColunaEstreita } from "../coluna-estreita";
 
 export const metadata: Metadata = {
   title: "Ajustes | Zelo",
@@ -18,8 +17,10 @@ export const metadata: Metadata = {
 
 export default function AjustesPage() {
   return (
-    <ColunaEstreita>
-      <h1 className="text-2xl font-semibold">Ajustes</h1>
+    // No computador, os cartões ficam em pares: avisos com horário de silêncio
+    // e conta com aparência. No celular, uma coluna só.
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 lg:grid lg:max-w-none lg:grid-cols-2">
+      <h1 className="text-2xl font-semibold lg:col-span-2">Ajustes</h1>
 
       <Card aria-label="Avisos no celular">
         <CardHeader>
@@ -30,7 +31,7 @@ export default function AjustesPage() {
         </CardContent>
       </Card>
 
-      <Suspense fallback={<p className="text-muted-foreground">Carregando...</p>}>
+      <Suspense fallback={<p className="text-muted-foreground lg:col-span-2">Carregando...</p>}>
         <DadosDaConta />
       </Suspense>
 
@@ -43,13 +44,13 @@ export default function AjustesPage() {
         </CardContent>
       </Card>
 
-      <form action={sair}>
-        <Button type="submit" variant="outline" className="h-11 w-full text-base">
+      <form action={sair} className="lg:col-span-2 lg:flex lg:justify-end">
+        <Button type="submit" variant="outline" className="h-11 w-full text-base lg:w-auto lg:px-8">
           <LogOut aria-hidden="true" />
           Sair
         </Button>
       </form>
-    </ColunaEstreita>
+    </div>
   );
 }
 
