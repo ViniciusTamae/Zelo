@@ -1,6 +1,6 @@
 # Zelo — estado do projeto e próximos passos
 
-Atualizado em 02/11/2026. Use este arquivo para começar um chat novo: ele resume o que já foi feito, como o projeto funciona e o que está pendente.
+Atualizado em 07/11/2026. Use este arquivo para começar um chat novo: ele resume o que já foi feito, como o projeto funciona e o que está pendente.
 
 ## O que é o Zelo
 
@@ -75,13 +75,21 @@ Tudo tem commit e está no GitHub, num repositório **privado**: https://github.
    - link inválido e avaliação ficam num cartão estreito.
    - notificações no canto inferior direito (`ProvedorNotificacoes`), só no computador: confirmações (imóvel excluído/arquivado, status alterado no quadro e no painel, nome e horário salvos, avisos ligados/desligados) e movimentos recusados no quadro; somem sozinhas em 5 s (erro em 8 s), param com o mouse em cima e têm X. No celular cada aviso continua no próprio lugar. Ficam no lugar, também no computador: links gerados de inquilino, mensagem do CEP e erros de formulário.
 
+10. **Dados de demonstração (`supabase/seed.sql`):**
+   - Marta (`marta@zelo.local`, 8 imóveis, 1 arquivado, 38 chamados) e Jorge (`jorge@zelo.local`, 2 imóveis, 4 chamados); entrar pelo código, que chega no Mailpit;
+   - inquilinos com links fixos (token `rpad('demo-<imovel>-<nome>', 43, '0')`; os principais estão listados no topo do arquivo), 1 imóvel vago com inquilino desativado;
+   - chamados dos últimos 6 meses, com histórico, recados, valores e avaliações; datas relativas a agora;
+   - carrega no `make db-reset` e com `make seed` (refaz só a demonstração, sem apagar o resto). Desliga os gatilhos de e-mail e aviso durante a carga. Os testes não apagam a demonstração.
+
 **Testes:** 230 unitários (Vitest), 95 do banco (pgTAP) e 39 de ponta a ponta (Playwright), sendo 31 no celular e 8 no computador (`*.pc.spec.ts`). Rode com `make test-all`.
 
 **Comandos úteis:**
 - `make dev`, `make dev-limpar` (quando o cache do Next ficar velho), `make db-start` e `make db-migrate`;
+- `make seed` (carrega a demonstração);
 - `make avisos-config` (configura no Vault do banco a URL das funções e o segredo dos avisos);
 - `make mail-clear`, `make test-all` (rode os testes pelo `make`: o teste de avisos precisa do acesso ao Docker que ele configura);
-- e-mails locais em http://localhost:54324.
+- e-mails locais em http://localhost:54324;
+- com a VPN da empresa (FortiClient) ligada, o app não alcança o Supabase local: a VPN cria uma rota para `172.18.0.0/16`, a mesma faixa da rede do Docker. Desligar a VPN (e reiniciar o `dev` se ele ficar recarregando) ou mudar a faixa do Docker (`default-address-pools` no `/etc/docker/daemon.json`).
 
 ## Pendências para as próximas atualizações
 
@@ -90,10 +98,6 @@ O celular está perfeito; não mexer sem pedir.
 ### Observabilidade
 
 - **Datadog:** o usuário quer começar a usar. Fazer junto com a publicação, em etapas: erros e logs do servidor, depois rastreamento e, por último, o navegador. Hoje só existem 5 `console.error`. Antes, definir a hospedagem (Vercel ou Docker), ver o custo e tratar a Edge Function, que roda no Supabase. O token de `/c/[token]` e `/avaliar/[token]` funciona como senha: mascarar nos logs e rastreamentos, assim como e-mails e descrições.
-
-### Melhorias pedidas
-
-1. **Dados de demonstração (seed):** proprietários, imóveis, inquilinos e chamados de exemplo, para ter volume ao apresentar. Lembrar que o login é por código no e-mail: no local o código chega no Mailpit.
 
 ### Ainda pendente do plano original
 

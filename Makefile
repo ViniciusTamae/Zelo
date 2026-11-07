@@ -4,7 +4,7 @@ export PWD := $(CURDIR)
 
 RUN := docker compose run --rm dev
 
-.PHONY: build sh install dev dev-limpar lint test test-db test-e2e test-all mail-clear db-start db-stop db-status db-reset db-migrate avisos-config db-types db-new prod
+.PHONY: build sh install dev dev-limpar lint test test-db test-e2e test-all mail-clear db-start db-stop db-status db-reset db-migrate seed avisos-config db-types db-new prod
 
 build:      ## Constrói a imagem de desenvolvimento
 	docker compose build dev
@@ -52,6 +52,10 @@ db-reset:   ## Recria o banco local do zero (APAGA os dados locais)
 
 db-migrate: ## Aplica só as migrações novas, sem apagar os dados locais
 	$(RUN) pnpm supabase migration up --local
+
+seed:       ## Carrega os dados de demonstração (refaz só eles; não apaga os seus dados)
+	@docker exec -i supabase_db_zelo psql -q -U postgres -v ON_ERROR_STOP=1 < supabase/seed.sql && \
+	echo "Demonstração carregada. Entre com marta@zelo.local ou jorge@zelo.local (código no Mailpit)."
 
 avisos-config: ## Grava no Vault do banco local a URL das funções e o segredo dos avisos
 	@segredo=$$(grep '^NOTIFICACOES_SEGREDO=' supabase/functions/.env | cut -d= -f2-); \
