@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "./database.types";
 
 // Rotas que exigem proprietário logado.
-const ROTAS_PROTEGIDAS = ["/chamados", "/imoveis", "/ajustes", "/boas-vindas"];
+const ROTAS_PROTEGIDAS = ["/chamados", "/imoveis", "/gastos", "/ajustes", "/boas-vindas"];
 
 // Renova a sessão do Auth a cada requisição e controla o acesso ao app:
 // sem sessão em rota protegida → /entrar; já logado em /entrar → /chamados.

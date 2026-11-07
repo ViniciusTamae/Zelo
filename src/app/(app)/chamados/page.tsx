@@ -18,6 +18,7 @@ import { contarFiltrosAtivos, lerFiltros, linkDosChamados } from "@/lib/chamados
 import { COLUNAS } from "@/lib/chamados/quadro";
 import { statusVisual } from "@/lib/chamados/status";
 import { formatarReais } from "@/lib/chamados/valor";
+import { linkDosGastos } from "@/lib/gastos/resumo";
 import { formatarDataHora, tempoDesde } from "@/lib/datas";
 import { cn } from "cn";
 
@@ -109,6 +110,7 @@ async function ConteudoChamados({ searchParams }: Pick<PageProps<"/chamados">, "
           colunas={colunas}
           selecionado={chamadoAberto}
           resumoDosFiltros={filtrando ? resumoDoQuadro(colunas.reduce((total, { cartoes }) => total + cartoes.length, 0)) : undefined}
+          verTodosHref={linkDosGastos({ imovelId: filtros.imovelId, categoria: filtros.categoria })}
         />
         {chamadoAberto && (
           <Suspense>

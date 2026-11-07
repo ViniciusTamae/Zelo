@@ -41,6 +41,10 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "4mb",
     },
   },
+  // Sem o botão "N" do modo de desenvolvimento (não existe em produção): em
+  // qualquer canto ele cobria algo (Chamados na barra do celular, o X do painel
+  // do PC). A tela de erro do Next continua aparecendo quando há erro.
+  devIndicators: false,
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

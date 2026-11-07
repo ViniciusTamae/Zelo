@@ -121,11 +121,14 @@ export function Quadro({
   colunas,
   selecionado,
   resumoDosFiltros,
+  verTodosHref,
 }: {
   colunas: ColunaDoQuadro[];
   selecionado?: string;
   // Com filtros ligados, a linha da dica diz quantos chamados aparecem.
   resumoDosFiltros?: string;
+  // "Ver todos" da coluna Resolvidos (o histórico completo fica em Gastos).
+  verTodosHref?: string;
 }) {
   const [exibidas, moverOtimista] = useOptimistic(colunas, moverCartao);
   const [, iniciarTransicao] = useTransition();
@@ -222,7 +225,7 @@ export function Quadro({
             um cartão em qualquer ponto, mesmo numa coluna quase vazia. */}
         <div className="grid min-h-[calc(100dvh-12.5rem)] grid-cols-3 gap-4">
           {exibidas.map((coluna) => (
-            <Coluna key={coluna.status} coluna={coluna}>
+            <Coluna key={coluna.status} coluna={coluna} verTodosHref={verTodosHref}>
               {coluna.cartoes.map((cartao) => (
                 <li key={cartao.id}>
                   <Cartao cartao={cartao} selecionado={cartao.id === selecionado} />
@@ -247,7 +250,15 @@ export function Quadro({
   );
 }
 
-function Coluna({ coluna, children }: { coluna: ColunaDoQuadro; children: React.ReactNode }) {
+function Coluna({
+  coluna,
+  verTodosHref,
+  children,
+}: {
+  coluna: ColunaDoQuadro;
+  verTodosHref?: string;
+  children: React.ReactNode;
+}) {
   const { setNodeRef, isOver } = useDroppable({ id: coluna.status });
 
   return (
@@ -264,6 +275,14 @@ function Coluna({ coluna, children }: { coluna: ColunaDoQuadro; children: React.
         {coluna.titulo}
         {coluna.status === "resolvido" && (
           <span className="text-xs font-normal text-muted-foreground">Últimos 30 dias</span>
+        )}
+        {coluna.status === "resolvido" && verTodosHref && (
+          <Link
+            href={verTodosHref}
+            className="rounded-sm text-xs font-normal text-muted-foreground underline underline-offset-2 hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+          >
+            Ver todos
+          </Link>
         )}
         <span className="ml-auto rounded-full bg-card px-2 py-0.5 text-xs text-muted-foreground">
           {coluna.cartoes.length}

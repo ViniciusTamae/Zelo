@@ -12,7 +12,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { formatarReais } from "@/lib/chamados/valor";
 import { formatarDataHora } from "@/lib/datas";
+import { listarConsertos } from "@/lib/gastos/dados";
+import { fraseDoPeriodo, linkDosGastos, resumirGastos } from "@/lib/gastos/resumo";
 import { obterImovel } from "@/lib/imoveis/dados";
 import { textoVistoEm } from "@/lib/inquilinos/visto";
 import { mensagemDoLink } from "@/lib/links";
@@ -52,6 +55,10 @@ async function DetalheImovel({
   if (!imovel) notFound();
   const arquivado = Boolean(imovel.arquivado_em);
 
+  // Quanto o imóvel custou: últimos 12 meses ou, se arquivado, todo o histórico.
+  const periodo = arquivado ? "tudo" : "12m";
+  const gastos = resumirGastos(await listarConsertos({ periodo, imovelId: imovel.id }), periodo);
+
   return (
     <>
       <div className="flex items-start justify-between gap-4">
@@ -75,6 +82,17 @@ async function DetalheImovel({
           </Link>
         )}
       </div>
+
+      {gastos.consertos > 0 && (
+        <p className="-mt-2 text-sm text-muted-foreground">
+          Gasto {fraseDoPeriodo(periodo)}:{" "}
+          <span className="font-semibold text-foreground">{formatarReais(gastos.total)}</span> em{" "}
+          {gastos.consertos === 1 ? "1 conserto" : `${gastos.consertos} consertos`}.{" "}
+          <Link href={linkDosGastos({ periodo, imovelId: imovel.id })} className="underline underline-offset-2 hover:text-foreground">
+            Ver gastos
+          </Link>
+        </p>
+      )}
 
       {arquivado && (
         <div

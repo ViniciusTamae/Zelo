@@ -75,13 +75,20 @@ Tudo tem commit e está no GitHub, num repositório **privado**: https://github.
    - link inválido e avaliação ficam num cartão estreito.
    - notificações no canto inferior direito (`ProvedorNotificacoes`), só no computador: confirmações (imóvel excluído/arquivado, status alterado no quadro e no painel, nome e horário salvos, avisos ligados/desligados) e movimentos recusados no quadro; somem sozinhas em 5 s (erro em 8 s), param com o mouse em cima e têm X. No celular cada aviso continua no próprio lugar. Ficam no lugar, também no computador: links gerados de inquilino, mensagem do CEP e erros de formulário.
 
-10. **Dados de demonstração (`supabase/seed.sql`):**
+10. **Histórico de gastos (`/gastos`, 4º item do menu):**
+   - consertos resolvidos com filtros de período (este mês, últimos 3/6/12 meses, este ano, tudo; meses no horário de Brasília), imóvel (arquivados inclusos) e categoria, na URL;
+   - total, quantidade e média (só de quem tem valor; os sem valor aparecem na lista e não entram no total), gráfico mês a mês com dica, divisão por imóvel e por categoria (clicar filtra) e a lista (tabela no computador);
+   - "Baixar planilha": CSV para o Excel brasileiro (`;`, vírgula decimal, BOM) do que está filtrado, em `/gastos/planilha`;
+   - "Ver todos" na coluna Resolvidos do quadro e, na página do imóvel, o gasto dos últimos 12 meses (arquivado: todo o histórico) com link para Gastos filtrado;
+   - sem valor do aluguel por enquanto (decidido em 07/11);
+   - o botão "N" do modo de desenvolvimento do Next está desligado (`devIndicators: false`): cobria a barra do celular e o X do painel.
+11. **Dados de demonstração (`supabase/seed.sql`):**
    - Marta (`marta@zelo.local`, 8 imóveis, 1 arquivado, 38 chamados) e Jorge (`jorge@zelo.local`, 2 imóveis, 4 chamados); entrar pelo código, que chega no Mailpit;
    - inquilinos com links fixos (token `rpad('demo-<imovel>-<nome>', 43, '0')`; os principais estão listados no topo do arquivo), 1 imóvel vago com inquilino desativado;
    - chamados dos últimos 6 meses, com histórico, recados, valores e avaliações; datas relativas a agora;
    - carrega no `make db-reset` e com `make seed` (refaz só a demonstração, sem apagar o resto). Desliga os gatilhos de e-mail e aviso durante a carga. Os testes não apagam a demonstração.
 
-**Testes:** 230 unitários (Vitest), 95 do banco (pgTAP) e 39 de ponta a ponta (Playwright), sendo 31 no celular e 8 no computador (`*.pc.spec.ts`). Rode com `make test-all`.
+**Testes:** 243 unitários (Vitest), 95 do banco (pgTAP) e 42 de ponta a ponta (Playwright), sendo 33 no celular e 9 no computador (`*.pc.spec.ts`). Rode com `make test-all`.
 
 **Comandos úteis:**
 - `make dev`, `make dev-limpar` (quando o cache do Next ficar velho), `make db-start` e `make db-migrate`;
@@ -101,7 +108,6 @@ O celular está perfeito; não mexer sem pedir.
 
 ### Ainda pendente do plano original
 
-- **Histórico de gastos por imóvel com filtros:** período, imóvel e categoria, com total gasto. Também resolve o "ver todos" da coluna Resolvidos, que no computador mostra só 30 dias.
 - **PWA:** dica de "Adicionar à Tela de Início", principalmente no iPhone, e tela de "sem internet".
 - **Antes de publicar:** conferir o build de produção e a imagem Docker.
 - **Publicar:** o GitHub já está feito (repositório privado). Faltam Supabase Cloud (região São Paulo), Vercel e domínio no Resend. O passo a passo está no README.
@@ -111,5 +117,5 @@ O celular está perfeito; não mexer sem pedir.
 - Cadastro aberto para qualquer e-mail ou só para convidados no lançamento?
 - "Sair" deve desligar os avisos daquele aparelho?
 - Os limites servem? Hoje são 10 chamados por dia e 10 min entre reenvios de link.
-- Valor do aluguel no imóvel (para mostrar o % gasto em consertos): fazer ou não?
+- Valor do aluguel no imóvel (para mostrar o % gasto em consertos): por enquanto não (07/11); dá para incluir em Gastos depois.
 - Contratos, ganhos, cobrança, reajuste e IR ficam para depois do lançamento (seria outro produto).

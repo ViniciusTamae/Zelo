@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardList, House, Settings, type LucideIcon } from "lucide-react";
+import { ClipboardList, House, Settings, Wallet, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "cn";
@@ -8,6 +8,7 @@ import { cn } from "cn";
 const ITENS: { href: string; texto: string; icone: LucideIcon }[] = [
   { href: "/chamados", texto: "Chamados", icone: ClipboardList },
   { href: "/imoveis", texto: "Imóveis", icone: House },
+  { href: "/gastos", texto: "Gastos", icone: Wallet },
   { href: "/ajustes", texto: "Ajustes", icone: Settings },
 ];
 
