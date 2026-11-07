@@ -1,0 +1,109 @@
+<!doctype html>
+<!--
+  Tela "Sem internet" do Zelo. O service worker (public/sw.js) guarda este
+  arquivo e o mostra quando uma página não carrega por falta de conexão.
+  Tudo fica aqui dentro (estilo, logo e script): sem internet, nenhum outro
+  arquivo do site está disponível. As cores são as do globals.css.
+-->
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0F766E" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0C0A09" media="(prefers-color-scheme: dark)" />
+    <title>Sem internet | Zelo</title>
+    <script>
+      // Mesmo tema escolhido em Ajustes (guardado pelo next-themes).
+      try {
+        var tema = localStorage.getItem("theme");
+        var escuro = tema === "dark" || (tema !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+        if (escuro) document.documentElement.classList.add("dark");
+      } catch (e) {}
+    </script>
+    <style>
+      :root {
+        --fundo: #fafaf9;
+        --texto: #1c1917;
+        --cartao: #ffffff;
+        --apagado: #78716c;
+        --borda: #e7e5e4;
+        --principal: #0f766e;
+        --sobre-principal: #ffffff;
+        color-scheme: light;
+      }
+      :root.dark {
+        --fundo: #0c0a09;
+        --texto: #f5f5f4;
+        --cartao: #1c1917;
+        --apagado: #a8a29e;
+        --borda: #292524;
+        --principal: #14b8a6;
+        --sobre-principal: #042f2e;
+        color-scheme: dark;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 16px;
+        background: var(--fundo);
+        color: var(--texto);
+        font: 16px/1.5 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        width: 100%;
+        max-width: 24rem;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 28px 24px;
+        border-radius: 16px;
+        background: var(--cartao);
+        box-shadow: 0 0 0 1px var(--borda);
+      }
+      .marca { display: flex; align-items: center; gap: 8px; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+      .marca svg { width: 32px; height: 32px; }
+      .marca path { stroke: var(--principal); }
+      .marca circle { fill: var(--principal); }
+      h1 { margin: 8px 0 0; font-size: 22px; line-height: 1.25; font-weight: 600; }
+      p { margin: 0; color: var(--apagado); }
+      button {
+        height: 44px;
+        border: 0;
+        border-radius: 8px;
+        background: var(--principal);
+        color: var(--sobre-principal);
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button:focus-visible { outline: 3px solid color-mix(in srgb, var(--principal) 50%, transparent); outline-offset: 2px; }
+      .aguardando { font-size: 14px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="marca">
+        <svg viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M16 38H42V20L24 5L6 20V38L10 44Z" fill="none" stroke-width="3.5" stroke-linejoin="round" />
+          <circle cx="17" cy="25" r="2.25" /><circle cx="24" cy="25" r="2.25" /><circle cx="31" cy="25" r="2.25" />
+        </svg>
+        Zelo
+      </div>
+      <h1>Você está sem internet</h1>
+      <p>Não foi possível carregar esta página. Assim que a conexão voltar, ela carrega sozinha.</p>
+      <button type="button" onclick="location.reload()">Tentar de novo</button>
+      <p class="aguardando" role="status">Aguardando a conexão...</p>
+    </main>
+    <script>
+      // A conexão voltou: carrega a página que a pessoa tinha pedido.
+      addEventListener("online", function () {
+        location.reload();
+      });
+    </script>
+  </body>
+</html>

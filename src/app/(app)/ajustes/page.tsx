@@ -2,6 +2,7 @@ import { LogOut } from "lucide-react";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import { CartaoInstalar } from "@/components/pwa";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { obterProprietario } from "@/lib/auth";
@@ -21,6 +22,9 @@ export default function AjustesPage() {
     // e conta com aparência. No celular, uma coluna só.
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 lg:grid lg:max-w-none lg:grid-cols-2">
       <h1 className="text-2xl font-semibold lg:col-span-2">Ajustes</h1>
+
+      {/* Some quando o Zelo já está instalado (ou o navegador não oferece). */}
+      <CartaoInstalar className="lg:col-span-2" />
 
       <Card aria-label="Avisos no celular">
         <CardHeader>

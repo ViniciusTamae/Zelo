@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { FaixaInstalar } from "@/components/pwa";
 import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { rotuloDaCategoria } from "@/lib/chamados/categorias";
@@ -38,6 +39,8 @@ export default function ChamadosPage({ searchParams }: PageProps<"/chamados">) {
     // a linha de baixo inteira. No celular a grade não existe (`contents`).
     <div className="contents lg:grid lg:grid-cols-[1fr_auto] lg:items-center lg:gap-x-4 lg:gap-y-3">
       <h1 className="text-2xl font-semibold">Chamados</h1>
+      {/* Dica de instalar o app (só no celular e enquanto não instalado). */}
+      <FaixaInstalar />
       {/* Aba e filtro vêm da URL, que só existe na requisição. */}
       <Suspense fallback={<p className="text-muted-foreground lg:col-span-2">Carregando...</p>}>
         <ConteudoChamados searchParams={searchParams} />

@@ -82,13 +82,17 @@ Tudo tem commit e está no GitHub, num repositório **privado**: https://github.
    - "Ver todos" na coluna Resolvidos do quadro e, na página do imóvel, o gasto dos últimos 12 meses (arquivado: todo o histórico) com link para Gastos filtrado;
    - sem valor do aluguel por enquanto (decidido em 07/11);
    - o botão "N" do modo de desenvolvimento do Next está desligado (`devIndicators: false`): cobria a barra do celular e o X do painel.
-11. **Dados de demonstração (`supabase/seed.sql`):**
+11. **App instalável (PWA):**
+   - service worker registrado em todas as telas (`RegistrarServiceWorker` no layout raiz);
+   - sem internet, as páginas mostram `public/offline.html` (estilo e logo embutidos, segue o tema, recarrega sozinha quando a conexão volta). Só essa tela fica guardada no aparelho; dados sempre vêm do servidor. Ao mudar o offline.html, subir a versão `CACHE` em `public/sw.js`;
+   - dica de instalar (`src/components/pwa.tsx`, `src/lib/pwa/instalacao.ts`): faixa no topo de Chamados, só no celular ("Agora não" esconde por 30 dias), e cartão "Instalar o app" em Ajustes. Android: botão que abre a instalação do navegador (`beforeinstallprompt`); iPhone: passos Compartilhar → Adicionar à Tela de Início. Nada aparece com o app já instalado.
+12. **Dados de demonstração (`supabase/seed.sql`):**
    - Marta (`marta@zelo.local`, 8 imóveis, 1 arquivado, 38 chamados) e Jorge (`jorge@zelo.local`, 2 imóveis, 4 chamados); entrar pelo código, que chega no Mailpit;
    - inquilinos com links fixos (token `rpad('demo-<imovel>-<nome>', 43, '0')`; os principais estão listados no topo do arquivo), 1 imóvel vago com inquilino desativado;
    - chamados dos últimos 6 meses, com histórico, recados, valores e avaliações; datas relativas a agora;
    - carrega no `make db-reset` e com `make seed` (refaz só a demonstração, sem apagar o resto). Desliga os gatilhos de e-mail e aviso durante a carga. Os testes não apagam a demonstração.
 
-**Testes:** 243 unitários (Vitest), 95 do banco (pgTAP) e 42 de ponta a ponta (Playwright), sendo 33 no celular e 9 no computador (`*.pc.spec.ts`). Rode com `make test-all`.
+**Testes:** 245 unitários (Vitest), 95 do banco (pgTAP) e 46 de ponta a ponta (Playwright), sendo 37 no celular e 9 no computador (`*.pc.spec.ts`). Rode com `make test-all`.
 
 **Comandos úteis:**
 - `make dev`, `make dev-limpar` (quando o cache do Next ficar velho), `make db-start` e `make db-migrate`;
@@ -108,7 +112,6 @@ O celular está perfeito; não mexer sem pedir.
 
 ### Ainda pendente do plano original
 
-- **PWA:** dica de "Adicionar à Tela de Início", principalmente no iPhone, e tela de "sem internet".
 - **Antes de publicar:** conferir o build de produção e a imagem Docker.
 - **Publicar:** o GitHub já está feito (repositório privado). Faltam Supabase Cloud (região São Paulo), Vercel e domínio no Resend. O passo a passo está no README.
 

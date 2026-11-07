@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { RegistrarServiceWorker } from "@/components/pwa";
 import { Tema } from "@/components/tema";
 
 import "./globals.css";
@@ -36,6 +37,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="pt-BR" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col">
         <Tema>{children}</Tema>
+        {/* Tela "Sem internet", avisos e o pedido de instalação do navegador. */}
+        <RegistrarServiceWorker />
       </body>
     </html>
   );
