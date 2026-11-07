@@ -12,10 +12,26 @@ const nextConfig: NextConfig = {
       { source: "/painel/imoveis/:caminho*", destination: "/imoveis/:caminho*", permanent: false },
     ];
   },
-  // Página do inquilino: o token está na URL. Sem Referer, ele não vaza para
-  // sites externos; e o link pessoal não deve ser indexado.
+  // Não anuncia "X-Powered-By: Next.js" em toda resposta.
+  poweredByHeader: false,
   async headers() {
     return [
+      // Proteções básicas em todas as respostas. Vem primeiro: as regras
+      // abaixo, mais específicas, substituem a mesma chave quando precisam.
+      {
+        source: "/:caminho*",
+        headers: [
+          // Nenhum outro site abre o Zelo dentro de uma moldura (clickjacking).
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          // Para outros sites vai só o domínio, nunca o caminho da página.
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          // A foto do chamado usa o seletor de arquivos, não a câmera direta.
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          // Só HTTPS por 2 anos (o navegador ignora em http://localhost).
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+        ],
+      },
       // Service worker sempre atualizado e só com scripts do próprio Zelo.
       {
         source: "/sw.js",
@@ -25,6 +41,8 @@ const nextConfig: NextConfig = {
           { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'" },
         ],
       },
+      // Página do inquilino: o token está na URL. Sem Referer, ele não vaza para
+      // sites externos; e o link pessoal não deve ser indexado.
       {
         source: "/(c|avaliar)/:token*",
         headers: [

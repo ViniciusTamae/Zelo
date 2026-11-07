@@ -86,21 +86,26 @@ Tudo tem commit e está no GitHub, num repositório **privado**: https://github.
    - service worker registrado em todas as telas (`RegistrarServiceWorker` no layout raiz);
    - sem internet, as páginas mostram `public/offline.html` (estilo e logo embutidos, segue o tema, recarrega sozinha quando a conexão volta). Só essa tela fica guardada no aparelho; dados sempre vêm do servidor. Ao mudar o offline.html, subir a versão `CACHE` em `public/sw.js`;
    - dica de instalar (`src/components/pwa.tsx`, `src/lib/pwa/instalacao.ts`): faixa no topo de Chamados, só no celular ("Agora não" esconde por 30 dias), e cartão "Instalar o app" em Ajustes. Android: botão que abre a instalação do navegador (`beforeinstallprompt`); iPhone: passos Compartilhar → Adicionar à Tela de Início. Nada aparece com o app já instalado.
-12. **Dados de demonstração (`supabase/seed.sql`):**
+12. **Build de produção conferido (07/11):**
+   - imagem Docker de 214 MB (app com 45 MB), usuário sem privilégios, sem `.env` dentro e healthcheck saudável;
+   - toda a bateria de navegador passa contra a imagem de produção: `E2E_BASE_URL=http://localhost:3100` com a imagem rodando na porta 3100 (`docker run --network host --env-file .env.local -e PORT=3100 zelo-app`);
+   - corrigido: a chave pública dos avisos (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`) não ia para o build Docker (o app dizia que o aparelho não suporta avisos). Toda variável `NEXT_PUBLIC_*` nova precisa entrar como `ARG` no Dockerfile e em `args` no docker-compose;
+   - cabeçalhos de segurança em todas as respostas (`X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, HSTS) e sem `X-Powered-By`.
+13. **Dados de demonstração (`supabase/seed.sql`):**
    - Marta (`marta@zelo.local`, 8 imóveis, 1 arquivado, 38 chamados) e Jorge (`jorge@zelo.local`, 2 imóveis, 4 chamados); entrar pelo código, que chega no Mailpit;
    - inquilinos com links fixos (token `rpad('demo-<imovel>-<nome>', 43, '0')`; os principais estão listados no topo do arquivo), 1 imóvel vago com inquilino desativado;
    - chamados dos últimos 6 meses, com histórico, recados, valores e avaliações; datas relativas a agora;
    - carrega no `make db-reset` e com `make seed` (refaz só a demonstração, sem apagar o resto). Desliga os gatilhos de e-mail e aviso durante a carga. Os testes não apagam a demonstração.
 
-**Testes:** 245 unitários (Vitest), 95 do banco (pgTAP) e 46 de ponta a ponta (Playwright), sendo 37 no celular e 9 no computador (`*.pc.spec.ts`). Rode com `make test-all`.
+**Testes:** 245 unitários (Vitest), 95 do banco (pgTAP) e 47 de ponta a ponta (Playwright), sendo 38 no celular e 9 no computador (`*.pc.spec.ts`). Rode com `make test-all`.
 
 **Comandos úteis:**
-- `make dev`, `make dev-limpar` (quando o cache do Next ficar velho), `make db-start` e `make db-migrate`;
+- `make dev`, `make dev-limpar` (cache do Next velho: por exemplo, a página fica recarregando sozinha sem parar, com "HMR hash mismatch" no navegador), `make db-start` e `make db-migrate`;
 - `make seed` (carrega a demonstração);
 - `make avisos-config` (configura no Vault do banco a URL das funções e o segredo dos avisos);
 - `make mail-clear`, `make test-all` (rode os testes pelo `make`: o teste de avisos precisa do acesso ao Docker que ele configura);
 - e-mails locais em http://localhost:54324;
-- com a VPN da empresa (FortiClient) ligada, o app não alcança o Supabase local: a VPN cria uma rota para `172.18.0.0/16`, a mesma faixa da rede do Docker. Desligar a VPN (e reiniciar o `dev` se ele ficar recarregando) ou mudar a faixa do Docker (`default-address-pools` no `/etc/docker/daemon.json`).
+- com a VPN da empresa (FortiClient) ligada, o app não alcança o Supabase local: a VPN cria uma rota para `172.18.0.0/16`, a mesma faixa da rede do Docker. Desligar a VPN ou mudar a faixa do Docker (`default-address-pools` no `/etc/docker/daemon.json`).
 
 ## Pendências para as próximas atualizações
 
@@ -112,7 +117,6 @@ O celular está perfeito; não mexer sem pedir.
 
 ### Ainda pendente do plano original
 
-- **Antes de publicar:** conferir o build de produção e a imagem Docker.
 - **Publicar:** o GitHub já está feito (repositório privado). Faltam Supabase Cloud (região São Paulo), Vercel e domínio no Resend. O passo a passo está no README.
 
 ### Decisões em aberto
