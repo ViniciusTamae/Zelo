@@ -92,17 +92,18 @@ Tudo tem commit e está no GitHub, num repositório **privado**: https://github.
    - corrigido: a chave pública dos avisos (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`) não ia para o build Docker (o app dizia que o aparelho não suporta avisos). Toda variável `NEXT_PUBLIC_*` nova precisa entrar como `ARG` no Dockerfile e em `args` no docker-compose;
    - cabeçalhos de segurança em todas as respostas (`X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, HSTS) e sem `X-Powered-By`.
 13. **Demonstração na Vercel (07/11):** https://zelo-demo-five.vercel.app
-   - Vercel Hobby (projeto `zelo-demo`) + Supabase Cloud grátis (projeto `paiqmywkpcnbcabfxsje`, São Paulo): 10 migrações, 95 testes do banco passando lá, buckets, agendamento dos avisos, função `entregar-notificacoes` com chaves VAPID próprias e Vault configurado;
+   - Vercel Hobby (projeto `zelo-demo`) + Supabase Cloud grátis (projeto `paiqmywkpcnbcabfxsje`, São Paulo): 11 migrações, testes do banco passando lá, buckets, agendamento dos avisos, função `entregar-notificacoes` com chaves VAPID próprias e Vault configurado;
    - credenciais em `.env.deploy` (fora do Git; `.vercelignore` impede de ir no deploy). Os tokens e a senha do banco foram colados no chat: trocar depois;
    - e-mails por SMTP (`SMTP_HOST`...; app e função): pensado para o Gmail com senha de app, porque sem domínio o Supabase grátis não deixa usar o modelo do código e o e-mail padrão só traz um link. **Pendente:** a senha de app do Gmail em `GMAIL_SENHA_APP` no `.env.deploy`; depois configurar o SMTP no Supabase Auth (com o modelo `codigo-acesso.html`), na Vercel e nos segredos da função;
-   - fluxo completo testado lá (login gerado pelo painel, imóvel, inquilino, chamado com foto, resolver, Gastos) e banco limpo depois.
+   - fluxo completo testado lá (login gerado pelo painel, imóvel, inquilino, chamado com foto, resolver, Gastos) e banco limpo depois;
+   - **botão "Entrar na demonstração" (08/11):** cada clique cria uma conta de visitante (`visitante-<aleatório>@demo.zelo.test`) já com os dados da Marta e entra sem e-mail; um visitante não vê o que o outro mexeu. Limite de 100 contas novas por hora. Vercel Cron diário às 4h chama `/api/demonstracao/limpar` (com `CRON_SECRET`), que apaga contas de visitante com mais de 24 h e as fotos delas. Só existe com `DEMONSTRACAO=ligada` (Vercel). Teste contra a Vercel: `E2E_BASE_URL=https://zelo-demo-five.vercel.app E2E_DEMONSTRACAO=ligada pnpm exec playwright test demonstracao --project=celular`.
 14. **Dados de demonstração (`supabase/seed.sql`):**
    - Marta (`marta@zelo.local`, 8 imóveis, 1 arquivado, 38 chamados) e Jorge (`jorge@zelo.local`, 2 imóveis, 4 chamados); entrar pelo código, que chega no Mailpit;
    - inquilinos com links fixos (token `rpad('demo-<imovel>-<nome>', 43, '0')`; os principais estão listados no topo do arquivo), 1 imóvel vago com inquilino desativado;
    - chamados dos últimos 6 meses, com histórico, recados, valores e avaliações; datas relativas a agora;
-   - carrega no `make db-reset` e com `make seed` (refaz só a demonstração, sem apagar o resto). Desliga os gatilhos de e-mail e aviso durante a carga. Os testes não apagam a demonstração.
+   - carrega no `make db-reset` e com `make seed` (refaz só a demonstração, sem apagar o resto). Os imóveis, inquilinos e chamados vêm da função `criar_dados_demonstracao` (migração `demonstracao_por_visitante`), a mesma das contas de visitante. Durante a carga, a marca `zelo.carga_demonstracao` (só na transação) faz os gatilhos não avisarem ninguém e manterem as datas do exemplo; não desliga gatilho para mais ninguém. Os testes não apagam a demonstração.
 
-**Testes:** 249 unitários (Vitest), 95 do banco (pgTAP) e 47 de ponta a ponta (Playwright), sendo 38 no celular e 9 no computador (`*.pc.spec.ts`). Rode com `make test-all`.
+**Testes:** 259 unitários (Vitest), 115 do banco (pgTAP) e 49 de ponta a ponta (Playwright), sendo 40 no celular e 9 no computador (`*.pc.spec.ts`). Rode com `make test-all`.
 
 **Comandos úteis:**
 - `make dev`, `make dev-limpar` (cache do Next velho: por exemplo, a página fica recarregando sozinha sem parar, com "HMR hash mismatch" no navegador), `make db-start` e `make db-migrate`;

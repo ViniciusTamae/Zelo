@@ -85,6 +85,8 @@ Os testes E2E leem o código de acesso no Mailpit e usam um e-mail `e2e-...@zelo
 
 Há uma demonstração em https://zelo-demo-five.vercel.app (Vercel Hobby + Supabase Cloud grátis, projeto `paiqmywkpcnbcabfxsje`, região São Paulo). As credenciais ficam em `.env.deploy` (fora do Git; o `.vercelignore` impede que vá no deploy). Sem domínio próprio, os e-mails saem pelo Gmail (SMTP com senha de app) configurado no Supabase Auth, na Vercel e na função de avisos. O projeto grátis do Supabase pausa após 7 dias sem uso: reative pelo painel.
 
+Para quem só quer conhecer, a tela de entrar tem o botão **Entrar na demonstração** (só com `DEMONSTRACAO=ligada`, configurado apenas na Vercel). Cada clique cria uma conta de visitante (`visitante-<aleatório>@demo.zelo.test`) já com os imóveis e chamados de exemplo (`criar_dados_demonstracao`, a mesma função do `supabase/seed.sql`) e entra nela sem e-mail: um visitante não vê o que o outro mexeu. No máximo 100 contas novas por hora. Todo dia às 4h (Vercel Cron, `vercel.json`), `/api/demonstracao/limpar` apaga as contas de visitante com mais de 24 h e as fotos delas; a rota exige o `CRON_SECRET` e o banco só lista contas de visitante.
+
 Novo deploy do app (o build roda na Vercel): `vercel deploy --prod --token "$VERCEL_TOKEN"` de dentro do container dev. Migração nova: `supabase db push` com o projeto ligado (`supabase link`).
 
 ## Imagem de produção

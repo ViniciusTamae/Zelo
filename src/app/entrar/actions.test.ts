@@ -1,12 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { entrar } from "./actions";
+import { entrar, entrarNaDemonstracao } from "./actions";
 import type { EstadoEntrar } from "./esquemas";
 
 const { auth, proprietario } = vi.hoisted(() => ({
   auth: { signInWithOtp: vi.fn(), verifyOtp: vi.fn() },
   // Linha de public.proprietarios lida depois do login
   proprietario: { nome: "Ana" as string | null },
+}));
+
+const admin = vi.hoisted(() => ({
+  createUser: vi.fn(),
+  deleteUser: vi.fn(),
+  generateLink: vi.fn(),
+  rpc: vi.fn(),
+}));
+
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: () => ({
+    auth: { admin: { createUser: admin.createUser, deleteUser: admin.deleteUser, generateLink: admin.generateLink } },
+    rpc: admin.rpc,
+  }),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -42,6 +56,11 @@ beforeEach(() => {
   auth.signInWithOtp.mockResolvedValue({ error: null });
   auth.verifyOtp.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
   proprietario.nome = "Ana";
+  admin.createUser.mockResolvedValue({ data: { user: { id: "visitante-1" } }, error: null });
+  admin.rpc.mockResolvedValue({ error: null });
+  admin.deleteUser.mockResolvedValue({ error: null });
+  admin.generateLink.mockResolvedValue({ data: { properties: { hashed_token: "hash-demo" } }, error: null });
+  vi.unstubAllEnvs();
 });
 
 describe("entrar: enviar código", () => {
@@ -225,5 +244,67 @@ describe("entrar: confirmar código", () => {
         formulario({ intencao: "confirmar", email: "dono@exemplo.com", codigo: "123456" }),
       ),
     ).rejects.toThrow("REDIRECT:/boas-vindas");
+  });
+});
+
+describe("entrarNaDemonstracao", () => {
+  it("com a demonstração desligada (computador e produção real), não cria conta", async () => {
+    vi.stubEnv("DEMONSTRACAO", "");
+
+    const estado = await entrarNaDemonstracao();
+
+    expect(estado.erro).toBe("A demonstração não está disponível aqui.");
+    expect(admin.createUser).not.toHaveBeenCalled();
+    expect(auth.verifyOtp).not.toHaveBeenCalled();
+  });
+
+  it("cria uma conta só do visitante, com os dados de exemplo, e entra nela sem e-mail", async () => {
+    vi.stubEnv("DEMONSTRACAO", "ligada");
+
+    await expect(entrarNaDemonstracao()).rejects.toThrow("REDIRECT:/chamados");
+
+    const { email } = admin.createUser.mock.calls[0][0];
+    expect(email).toMatch(/^visitante-[0-9a-f-]{36}@demo\.zelo\.test$/);
+    expect(admin.createUser).toHaveBeenCalledWith({
+      email,
+      email_confirm: true,
+      user_metadata: { nome: "Marta Oliveira" },
+    });
+    expect(admin.rpc).toHaveBeenCalledWith("preparar_conta_demonstracao", { p_dono: "visitante-1" });
+    expect(admin.generateLink).toHaveBeenCalledWith({ type: "magiclink", email });
+    expect(auth.verifyOtp).toHaveBeenCalledWith({ type: "email", token_hash: "hash-demo" });
+    expect(auth.signInWithOtp).not.toHaveBeenCalled();
+  });
+
+  it("cada clique cria uma conta diferente", async () => {
+    vi.stubEnv("DEMONSTRACAO", "ligada");
+
+    await entrarNaDemonstracao().catch(() => {});
+    await entrarNaDemonstracao().catch(() => {});
+
+    const [primeira, segunda] = admin.createUser.mock.calls.map(([dados]) => dados.email);
+    expect(primeira).not.toBe(segunda);
+  });
+
+  it("demonstração cheia: apaga a conta recém-criada e avisa", async () => {
+    vi.stubEnv("DEMONSTRACAO", "ligada");
+    admin.rpc.mockResolvedValue({ error: { hint: "demonstracao_cheia" } });
+
+    const estado = await entrarNaDemonstracao();
+
+    expect(estado.erro).toBe("A demonstração está cheia agora. Tente de novo em alguns minutos.");
+    expect(admin.deleteUser).toHaveBeenCalledWith("visitante-1");
+    expect(auth.verifyOtp).not.toHaveBeenCalled();
+  });
+
+  it("se o Supabase falha ao criar a conta, avisa sem entrar", async () => {
+    vi.stubEnv("DEMONSTRACAO", "ligada");
+    admin.createUser.mockResolvedValue({ data: { user: null }, error: { code: "unexpected_failure" } });
+
+    const estado = await entrarNaDemonstracao();
+
+    expect(estado.erro).toMatch(/Não foi possível abrir a demonstração/);
+    expect(admin.rpc).not.toHaveBeenCalled();
+    expect(auth.verifyOtp).not.toHaveBeenCalled();
   });
 });

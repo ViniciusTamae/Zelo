@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { Logo } from "@/components/marca";
+import { demonstracaoLigada } from "@/lib/demonstracao";
 import {
   Card,
   CardContent,
@@ -10,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+import { BotaoDemonstracao } from "./botao-demonstracao";
 import { estadoDoLink } from "./esquemas";
 import { FormEntrar } from "./form-entrar";
 
@@ -31,11 +33,13 @@ export default function EntrarPage({ searchParams }: PageProps<"/entrar">) {
             Entre com seu e-mail. Você recebe um código, sem precisar de senha.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-6">
           {/* Os parâmetros da URL só existem na requisição: ficam atrás do Suspense. */}
           <Suspense>
             <FormDoLink searchParams={searchParams} />
           </Suspense>
+          {/* Só na demonstração da Vercel (DEMONSTRACAO=ligada). */}
+          {demonstracaoLigada() && <BotaoDemonstracao />}
         </CardContent>
       </Card>
     </main>

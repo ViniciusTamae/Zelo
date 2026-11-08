@@ -187,17 +187,37 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "calcular_entrega":
+            "arquivos_da_conta":
+{ Args: { "p_dono": string }; Returns: {
+              "bucket": string,"caminho": string
+            }[]
+                           },
+"calcular_entrega":
 { Args: { "momento": string,"silencio_fim": string,"silencio_inicio": string,"urgente": boolean }; Returns: string
                            },
 "chamar_entrega":
 { Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"contas_demonstracao_vencidas":
+{ Args: { "p_idade"?: string }; Returns: string[]
+                           },
+"criar_dados_demonstracao":
+{ Args: { "p_conjunto": string,"p_dono": string,"p_tokens_fixos"?: boolean }; Returns: undefined
+                           },
+"eh_conta_de_visitante":
+{ Args: { "p_email": string }; Returns: boolean
+                           },
+"em_carga_de_demonstracao":
+{ Args: Record<PropertyKey, never>; Returns: boolean
                            },
 "excluir_ou_arquivar_imovel":
 { Args: { "imovel": string }; Returns: string
                            },
 "mudar_status_chamado":
 { Args: { "chamado": string,"nota"?: string,"novo_status": Database["public"]['Enums']["status_chamado"],"valor"?: number }; Returns: undefined
+                           },
+"preparar_conta_demonstracao":
+{ Args: { "p_dono": string }; Returns: undefined
                            },
 "reservar_notificacoes":
 { Args: { "limite"?: number,"para": Database["public"]['Enums']["destino_notificacao"] }; Returns: {
