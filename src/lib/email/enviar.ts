@@ -1,5 +1,7 @@
 import "server-only";
 
+import { createTransport } from "nodemailer";
+
 export type Email = {
   para: string;
   assunto: string;
@@ -7,19 +9,37 @@ export type Email = {
   texto: string;
 };
 
-// Envia um e-mail do app. Em produção usa a API do Resend; no local, sem
-// RESEND_API_KEY, entrega no Mailpit do Supabase (nada sai de verdade).
+// Envia um e-mail do app, pelo primeiro caminho configurado:
+// 1. SMTP (SMTP_HOST...): qualquer provedor, como o Gmail com senha de app;
+// 2. API do Resend (RESEND_API_KEY);
+// 3. Mailpit do Supabase local (MAILPIT_URL): nada sai de verdade.
+// O remetente vem de EMAIL_FROM (ou RESEND_FROM, o nome antigo).
 export async function enviarEmail(email: Email) {
-  const remetente = process.env.RESEND_FROM;
-  if (!remetente) throw new Error("RESEND_FROM não configurado.");
+  const remetente = process.env.EMAIL_FROM ?? process.env.RESEND_FROM;
+  if (!remetente) throw new Error("EMAIL_FROM não configurado.");
 
-  if (process.env.RESEND_API_KEY) {
+  if (process.env.SMTP_HOST) {
+    await enviarPorSmtp(email, remetente);
+  } else if (process.env.RESEND_API_KEY) {
     await enviarPeloResend(email, remetente, process.env.RESEND_API_KEY);
   } else if (process.env.MAILPIT_URL) {
     await enviarPeloMailpit(email, remetente, process.env.MAILPIT_URL);
   } else {
-    throw new Error("Configure RESEND_API_KEY (produção) ou MAILPIT_URL (local).");
+    throw new Error("Configure SMTP_HOST ou RESEND_API_KEY (produção) ou MAILPIT_URL (local).");
   }
+}
+
+// Porta 465: conexão já cifrada (Gmail, Resend); outras portas sobem para
+// TLS quando o servidor oferece. Sem SMTP_USER, entra sem login (Mailpit).
+async function enviarPorSmtp(email: Email, remetente: string) {
+  const porta = Number(process.env.SMTP_PORT ?? 465);
+  const transporte = createTransport({
+    host: process.env.SMTP_HOST,
+    port: porta,
+    secure: porta === 465,
+    auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined,
+  });
+  await transporte.sendMail({ from: remetente, to: email.para, subject: email.assunto, html: email.html, text: email.texto });
 }
 
 async function enviarPeloResend(email: Email, remetente: string, chave: string) {

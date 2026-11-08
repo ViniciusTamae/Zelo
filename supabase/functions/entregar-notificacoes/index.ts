@@ -4,6 +4,7 @@
 // Só aceita quem manda o segredo combinado (cabeçalho x-zelo-segredo).
 
 import { createClient } from "npm:@supabase/supabase-js@2.118.0";
+import nodemailer from "npm:nodemailer@10.0.11";
 import webpush from "npm:web-push@3.6.7";
 
 import { montarAviso, type ChamadoDoAviso } from "../_shared/aviso.ts";
@@ -201,10 +202,29 @@ async function novoTokenDeAvaliacao(chamadoId: string) {
   return token;
 }
 
-// Produção: API do Resend. Local (sem RESEND_API_KEY): Mailpit do Supabase.
+// Pelo primeiro caminho configurado, como no app (src/lib/email/enviar.ts):
+// 1. SMTP (SMTP_HOST...), como o Gmail com senha de app. Na nuvem, use a
+//    porta 465: as Edge Functions não abrem conexões nas portas 25 e 587;
+// 2. API do Resend (RESEND_API_KEY);
+// 3. Mailpit do Supabase local.
+// Remetente: EMAIL_FROM (ou RESEND_FROM, o nome antigo).
 async function enviarEmail(para: string, email: Email) {
-  const remetente = Deno.env.get("RESEND_FROM") ?? "Zelo <avisos@zelo.test>";
+  const remetente = Deno.env.get("EMAIL_FROM") ?? Deno.env.get("RESEND_FROM") ?? "Zelo <avisos@zelo.test>";
+  const hostSmtp = Deno.env.get("SMTP_HOST");
   const chaveResend = Deno.env.get("RESEND_API_KEY");
+
+  if (hostSmtp) {
+    const porta = Number(Deno.env.get("SMTP_PORT") ?? 465);
+    const usuario = Deno.env.get("SMTP_USER");
+    const transporte = nodemailer.createTransport({
+      host: hostSmtp,
+      port: porta,
+      secure: porta === 465,
+      auth: usuario ? { user: usuario, pass: Deno.env.get("SMTP_PASS") } : undefined,
+    });
+    await transporte.sendMail({ from: remetente, to: para, subject: email.assunto, html: email.html, text: email.texto });
+    return;
+  }
 
   const resposta = chaveResend
     ? await fetch("https://api.resend.com/emails", {

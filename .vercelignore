@@ -1,0 +1,13 @@
+# O que NÃO vai para a Vercel no `vercel deploy` (o build roda lá).
+# Credenciais e configurações locais
+.env*
+!.env.example
+supabase/.temp
+supabase/functions/.env
+# Resultados de testes, caches e o que a Vercel não usa
+test-results
+playwright-report
+node_modules
+.next
+docs
+e2e

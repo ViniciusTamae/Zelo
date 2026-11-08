@@ -12,6 +12,8 @@ const IPHONE =
 // O Chrome só oferece a instalação em condições que o navegador de teste não
 // tem; simula o evento que ele dispara (com o resultado escolhido).
 async function oferecerInstalacao(page: Page, resultado: "accepted" | "dismissed") {
+  // Só depois de os scripts do app carregarem (antes disso ninguém escuta o evento).
+  await page.waitForLoadState("load");
   await page.evaluate((outcome) => {
     const evento = new Event("beforeinstallprompt", { cancelable: true });
     Object.assign(evento, {
@@ -74,6 +76,9 @@ test("Android: Agora não esconde a faixa, mas Ajustes continua oferecendo", asy
   await expect(faixa).toBeHidden();
 
   await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Ajustes" }).click();
+  await expect(page.getByRole("heading", { name: "Ajustes" })).toBeVisible();
+  // O Chrome volta a oferecer a instalação a cada página.
+  await oferecerInstalacao(page, "dismissed");
   const cartao = page.getByLabel("Instalar o app");
   await expect(cartao).toBeVisible();
   await expect(cartao.getByRole("button", { name: "Instalar o Zelo" })).toBeVisible();

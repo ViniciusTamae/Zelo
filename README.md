@@ -41,7 +41,7 @@ make db-types                # regenera src/lib/supabase/database.types.ts
 
 ## E-mails
 
-Os e-mails que o próprio app manda (ex.: "Perdi meu link" do inquilino) usam a API do Resend quando `RESEND_API_KEY` está definida; sem ela, vão para o Mailpit local (`MAILPIT_URL`). O remetente vem de `RESEND_FROM`.
+Os e-mails que o próprio app e a função de avisos mandam ("Perdi meu link", status ao inquilino) saem pelo primeiro caminho configurado: SMTP (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`; ex.: Gmail com senha de app na porta 465), a API do Resend (`RESEND_API_KEY`) ou, no local, o Mailpit (`MAILPIT_URL`). O remetente vem de `EMAIL_FROM` (o nome antigo `RESEND_FROM` ainda vale).
 
 ### E-mails do login
 
@@ -65,7 +65,7 @@ Quando chega um chamado, o proprietário recebe um aviso no celular. Quando o pr
 
 Na nuvem (ao publicar):
 
-1. `supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:... NOTIFICACOES_SEGREDO=... APP_URL=https://... RESEND_FROM="Zelo <avisos@...>" RESEND_API_KEY=...` (lista completa em `supabase/functions/.env.example`)
+1. `supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:... NOTIFICACOES_SEGREDO=... APP_URL=https://... EMAIL_FROM="Zelo <avisos@...>"` mais o SMTP (`SMTP_HOST=... SMTP_PORT=465 SMTP_USER=... SMTP_PASS=...`) ou `RESEND_API_KEY=...` (lista completa em `supabase/functions/.env.example`)
 2. `supabase functions deploy entregar-notificacoes`
 3. No SQL Editor, o conteúdo de `supabase/avisos-config.sql` trocando `:'url'` por `'https://<projeto>.supabase.co/functions/v1'` e `:'segredo'` pelo mesmo `NOTIFICACOES_SEGREDO`.
 4. Na Vercel, `NEXT_PUBLIC_VAPID_PUBLIC_KEY` com a mesma chave pública.
@@ -80,6 +80,12 @@ make test-all   # lint + tipos + todos os testes
 ```
 
 Os testes E2E leem o código de acesso no Mailpit e usam um e-mail `e2e-...@zelo.test` diferente a cada execução. Ao terminar, esvaziam o Mailpit e apagam os usuários `e2e-` que criaram. Para esvaziar a caixa à mão: `make mail-clear`.
+
+## Demonstração na Vercel
+
+Há uma demonstração em https://zelo-demo-five.vercel.app (Vercel Hobby + Supabase Cloud grátis, projeto `paiqmywkpcnbcabfxsje`, região São Paulo). As credenciais ficam em `.env.deploy` (fora do Git; o `.vercelignore` impede que vá no deploy). Sem domínio próprio, os e-mails saem pelo Gmail (SMTP com senha de app) configurado no Supabase Auth, na Vercel e na função de avisos. O projeto grátis do Supabase pausa após 7 dias sem uso: reative pelo painel.
+
+Novo deploy do app (o build roda na Vercel): `vercel deploy --prod --token "$VERCEL_TOKEN"` de dentro do container dev. Migração nova: `supabase db push` com o projeto ligado (`supabase link`).
 
 ## Imagem de produção
 
